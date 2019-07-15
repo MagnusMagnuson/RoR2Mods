@@ -49,7 +49,6 @@ namespace BiggerBazaar
             // chest players interact with
             SpawnCard chestCard = Resources.Load<SpawnCard>("SpawnCards/InteractableSpawnCard/iscChest1");
             GameObject chest = chestCard.DoSpawn(position, Quaternion.Euler(new Vector3(0f, 0f, 0f)), null);
-            // TODO I don't know how fix the random wonky rotations when spawning a chest. This works but is obviously very hacky
             chest.transform.eulerAngles = rotation;
 
             List<ItemIndex> drops = ItemDropAPI.GetDefaultDropList(itemTier);
