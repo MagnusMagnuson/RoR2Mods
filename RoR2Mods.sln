@@ -9,7 +9,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LunarCoinChanceMultiplier",
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CheaperCauldrons", "CheaperCauldrons\CheaperCauldrons.csproj", "{2AC34152-3665-4685-BE4B-CEDAB2EE8613}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DisableItemDisplay", "DisableItemDisplay\DisableItemDisplay.csproj", "{E1052713-F760-46B7-8484-44DAD1844DF2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DisableItemEquipmentDisplay", "DisableItemDisplay\DisableItemEquipmentDisplay.csproj", "{E1052713-F760-46B7-8484-44DAD1844DF2}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ItemExchangeNotifier", "ItemExchangeNotifier\ItemExchangeNotifier.csproj", "{940CAB92-F2D0-4ED2-8879-653BBBD0C430}"
 EndProject
