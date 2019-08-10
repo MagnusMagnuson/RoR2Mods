@@ -22,7 +22,7 @@ namespace BossRush
         public static ConfigWrapper<bool> MultiShopAmountScaleWithPlayer;
 
         public static ConfigWrapper<int> MoneyGrantedPerTeleporterBossClear;
-        public static ConfigWrapper<float> BossSpawnCostReduction;
+        public static ConfigWrapper<float> BossSpawnCostReductionMultiplier;
 
         public static List<ItemTierShopConfig> tierWeights = new List<ItemTierShopConfig>();
         public static double tierTotal = 0;
@@ -48,7 +48,7 @@ namespace BossRush
 
             GameMode = config.Wrap(
             "1. General",
-            "GameMode",
+            "-- GameMode",
             "Set the desired game mode." +
             "\n 0 - Default mode: Spawn X amount of multi shops with random item tiers." +
             "\n 1 - Alternate mode: Spawn one multi shop for each enabled tier" +
@@ -57,13 +57,13 @@ namespace BossRush
 
             MoneyGrantedPerTeleporterBossClear = config.Wrap(
             "1. General",
-            "MoneyGrantedPerTeleporterBossClear",
+            "-- MoneyGrantedPerTeleporterBossClear",
             "Set how much money, and thus items, each player obtains after every teleporter boss clear\n(Default value: 8)",
             8);
 
-            BossSpawnCostReduction = config.Wrap(
+            BossSpawnCostReductionMultiplier = config.Wrap(
             "1. General",
-            "BossSpawnCostReduction",
+            "-- BossSpawnCostReductionMultiplier",
             "Set how much less boss enemies (champions) cost the game to spawn. A higher value means that the game can afford to spawn more or stronger boss type enemies.\nSetting this to 2 e.g. should spawn two bosses on the first stage in single player, rather than just one. \n(Default value: 1.0 (float))",
             1f);
 
@@ -71,124 +71,124 @@ namespace BossRush
             // ITEM TIERS
             Tier1Enabled = config.Wrap(
             "2. Item Tiers",
-            "Tier1",
+            "-- Tier1",
             "Enable tier 1 items to appear in the multishop\n(Default value: true)",
             true);
 
             Tier2Enabled = config.Wrap(
             "2. Item Tiers",
-            "Tier2",
+            "-- Tier2",
             "Enable tier 2 items to appear in the multishop\n(Default value: true)",
             true);
 
             Tier3Enabled = config.Wrap(
             "2. Item Tiers",
-            "Tier3",
+            "-- Tier3",
             "Enable tier 3 items to appear in the multishop\n(Default value: true)",
             true);
 
             TierBossEnabled = config.Wrap(
             "2. Item Tiers",
-            "TierBoss",
+            "-- TierBoss",
             "Enable boss tier items to appear in the multishop\n(Default value: false)",
             false);
 
             TierLunarEnabled = config.Wrap(
             "2. Item Tiers",
-            "TierLunar",
+            "-- TierLunar",
             "Enable lunar tier items to appear in the multishop\n(Default value: false)",
             false);
 
             EquipmentEnabled = config.Wrap(
             "2. Item Tiers",
-            "EquipmentEnabled",
+            "-- EquipmentEnabled",
             "Enable equipment items to appear in the multishop\n(Default value: true)",
             true);
 
             // Game Mode Config
             MultiShopAmount = config.Wrap(
             "3. DefaultMode Options",
-            "MultiShopAmount",
+            "-- MultiShopAmount",
             "Set the amount of multishops that spawn after the boss is defeated\n(Default value: 3)",
             3);
 
             MultiShopAmountScaleWithPlayer = config.Wrap(
             "3. DefaultMode Options",
-            "MultiShopAmountScaleWithPlayer",
+            "-- MultiShopAmountScaleWithPlayer",
             "Overrides the amount specified at MultiShopAmount and instead scales the amount of multishops with amount of players (one shop per player)\n(Default value: false)",
             false);
 
             // TIER WEIGHTS
             Tier1Weight = config.Wrap(
             "3. DefaultMode Options",
-            "Tier1Weights",
+            "-- Tier1Weights",
             "Set the weight for Tier 1 items to appear in the multishop\n(Default value: 0.8)",
             0.8f);
 
             Tier2Weight = config.Wrap(
             "3. DefaultMode Options",
-            "Tier2Weights",
+            "-- Tier2Weights",
             "Set the weight for Tier 2 items to appear in the multishop\n(Default value: 0.2)",
             0.2f);
 
             Tier3Weight = config.Wrap(
             "3. DefaultMode Options",
-            "Tier3Weights",
+            "-- Tier3Weights",
             "Set the weight for Tier 3 items to appear in the multishop\n(Default value: 0.1)",
             0.1f);
 
             TierBossWeight = config.Wrap(
             "3. DefaultMode Options",
-            "TierBossWeights",
+            "-- TierBossWeights",
             "Set the weight for Boss items to appear in the multishop\n(Default value: 0.05)",
             0.05f);
 
             TierLunarWeight = config.Wrap(
             "3. DefaultMode Options",
-            "TierLunarWeights",
+            "-- TierLunarWeights",
             "Set the weight for Lunar items to appear in the multishop\n(Default value: 0.1)",
             0.1f);
 
             EquipmentWeight = config.Wrap(
             "3. DefaultMode Options",
-            "EquipmentWeight",
+            "-- EquipmentWeight",
             "Set the weight for equipment items to appear in the multishop\n(Default value: 0.1)",
             0.1f);
 
 
             Tier1Price = config.Wrap(
             "4. AlternateMode Options",
-            "Tier1Price",
+            "-- Tier1Price",
             "Set the price for tier 1 items\n(Default value: 1)",
             1);
 
             Tier2Price = config.Wrap(
             "4. AlternateMode Options",
-            "Tier2Price",
+            "-- Tier2Price",
             "Set the price for tier 2 items\n(Default value: 2)",
             2);
 
             Tier3Price = config.Wrap(
             "4. AlternateMode Options",
-            "Tier3Price",
+            "-- Tier3Price",
             "Set the price for tier 3 items\n(Default value: 4)",
             4);
 
             TierBossPrice = config.Wrap(
             "4. AlternateMode Options",
-            "TierBossPrice",
+            "-- TierBossPrice",
             "Set the price for boss tier items\n(Default value: 7)",
             7);
 
             TierLunarPrice = config.Wrap(
             "4. AlternateMode Options",
-            "TierLunarPrice",
+            "-- TierLunarPrice",
             "Set the price for lunar tier items\n(Default value: 5)",
             5);
 
             EquipmentPrice = config.Wrap(
             "4. AlternateMode Options",
-            "TierEquipmentPrice",
+            "-- TierEquipmentPrice",
             "Set the price for equipment items\n(Default value: 3)",
             3);
 

@@ -208,7 +208,7 @@ namespace BossRush
                     foreach (DirectorCard directorCard in category.cards)
                     {
                         //Debug.Log("DirectorCard Cost: " + directorCard.cost);
-                        directorCard.cost = Mathf.RoundToInt(directorCard.cost * (1 / ModConfig.BossSpawnCostReduction.Value));
+                        directorCard.cost = Mathf.RoundToInt(directorCard.cost * (1 / ModConfig.BossSpawnCostReductionMultiplier.Value));
                         weightedSelection.AddChoice(directorCard, (float)directorCard.selectionWeight / num * category.selectionWeight);
                         //weightedSelection.AddChoice(directorCard, selectionWeight);
                     }
