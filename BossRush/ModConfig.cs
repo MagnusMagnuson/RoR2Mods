@@ -122,37 +122,37 @@ namespace BossRush
             Tier1Weight = config.Wrap(
             "3. DefaultMode Options",
             "Tier1Weights",
-            "Set the weight for Tier 1 items to appear in the multishop\n(Default value: 0.8f)",
+            "Set the weight for Tier 1 items to appear in the multishop\n(Default value: 0.8)",
             0.8f);
 
             Tier2Weight = config.Wrap(
             "3. DefaultMode Options",
             "Tier2Weights",
-            "Set the weight for Tier 2 items to appear in the multishop\n(Default value: 0.2f)",
+            "Set the weight for Tier 2 items to appear in the multishop\n(Default value: 0.2)",
             0.2f);
 
             Tier3Weight = config.Wrap(
             "3. DefaultMode Options",
             "Tier3Weights",
-            "Set the weight for Tier 3 items to appear in the multishop\n(Default value: 0.1f)",
+            "Set the weight for Tier 3 items to appear in the multishop\n(Default value: 0.1)",
             0.1f);
 
             TierBossWeight = config.Wrap(
             "3. DefaultMode Options",
             "TierBossWeights",
-            "Set the weight for Boss items to appear in the multishop\n(Default value: 0.1f)",
-            0.1f);
+            "Set the weight for Boss items to appear in the multishop\n(Default value: 0.05)",
+            0.05f);
 
             TierLunarWeight = config.Wrap(
             "3. DefaultMode Options",
             "TierLunarWeights",
-            "Set the weight for Lunar items to appear in the multishop\n(Default value: 0.1f)",
+            "Set the weight for Lunar items to appear in the multishop\n(Default value: 0.1)",
             0.1f);
 
             EquipmentWeight = config.Wrap(
             "3. DefaultMode Options",
             "EquipmentWeight",
-            "Set the weight for equipment items to appear in the multishop\n(Default value: 0.1f)",
+            "Set the weight for equipment items to appear in the multishop\n(Default value: 0.1)",
             0.1f);
 
 

@@ -207,7 +207,7 @@ namespace BossRush
                 {
                     foreach (DirectorCard directorCard in category.cards)
                     {
-                        Debug.Log("DirectorCard Cost: " + directorCard.cost);
+                        //Debug.Log("DirectorCard Cost: " + directorCard.cost);
                         directorCard.cost = Mathf.RoundToInt(directorCard.cost * (1 / ModConfig.BossSpawnCostReduction.Value));
                         weightedSelection.AddChoice(directorCard, (float)directorCard.selectionWeight / num * category.selectionWeight);
                         //weightedSelection.AddChoice(directorCard, selectionWeight);
@@ -227,6 +227,14 @@ namespace BossRush
 
         private IEnumerator Coroutine_SpawnTripleShops()
         {
+            int shopCount = 0;
+            if (ModConfig.GameMode.Value == 0)
+            {
+                shopCount = ModConfig.MultiShopAmount.Value;
+            } else if(ModConfig.GameMode.Value == 1)
+            {
+                shopCount = ModConfig.tierWeights.Count;
+            }
             int tripleShopAmount = 0;
             switch (ModConfig.GameMode.Value)
             {
@@ -241,7 +249,7 @@ namespace BossRush
             Xoroshiro128Plus xoroshiro128Plus = new Xoroshiro128Plus((ulong)Run.instance.stageRng.nextUint);
             for (int i = 0; i < tripleShopAmount; i++)
             {
-                yield return new WaitForSeconds(1.2f);
+                yield return new WaitForSeconds(2f / shopCount);
                 SpawnShop(xoroshiro128Plus);
                 
             }

@@ -13,6 +13,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Class1.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Reference Include="Assembly-CSharp">
       <HintPath>..\libs\Assembly-CSharp.dll</HintPath>
     </Reference>
