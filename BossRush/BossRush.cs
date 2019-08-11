@@ -6,6 +6,8 @@ using R2API.Utils;
 using System.Collections.Generic;
 using System.Collections;
 using MonoMod.Cil;
+using RoR2.Navigation;
+using Mono.Cecil.Cil;
 
 namespace BossRush
 {
@@ -55,7 +57,36 @@ namespace BossRush
 
             On.RoR2.DeathRewards.OnKilledServer += DeathRewards_OnKilledServer;
 
+            On.RoR2.SceneDirector.PopulateScene += SceneDirector_PopulateScene;
+
+            IL.RoR2.SceneDirector.PlacePlayerSpawnsViaNodegraph += SceneDirector_PlacePlayerSpawnsViaNodegraph;
+
             //On.RoR2.ConvertPlayerMoneyToExperience.Start += ConvertPlayerMoneyToExperience_Start;
+        }
+
+        private void SceneDirector_PlacePlayerSpawnsViaNodegraph(ILContext il)
+        {
+            ILCursor c = new ILCursor(il);
+            c.GotoNext(
+                x => x.MatchLdcI4(3),
+                x => x.MatchMul(),
+                x => x.MatchLdcI4(4),
+                x => x.MatchDiv()
+            );
+            c.Index += 1;
+            c.RemoveRange(2);
+            c.Index += 3;
+            c.Emit(OpCodes.Ldc_I4_2);
+            c.Emit(OpCodes.Mul);
+            c.Emit(OpCodes.Ldc_I4_5);
+            c.Emit(OpCodes.Div);
+
+        }
+
+        private void SceneDirector_PopulateScene(On.RoR2.SceneDirector.orig_PopulateScene orig, SceneDirector self)
+        {
+            self.InvokeMethod("RemoveAllExistingSpawnPoints");
+            orig(self);
         }
 
         //private void ConvertPlayerMoneyToExperience_Start(On.RoR2.ConvertPlayerMoneyToExperience.orig_Start orig, ConvertPlayerMoneyToExperience self)
