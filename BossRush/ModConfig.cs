@@ -24,6 +24,8 @@ namespace BossRush
         public static ConfigWrapper<int> MoneyGrantedPerTeleporterBossClear;
         public static ConfigWrapper<float> BossSpawnCostReductionMultiplier;
 
+        public static ConfigWrapper<bool> RandomBosses;
+
         public static List<ItemTierShopConfig> tierWeights = new List<ItemTierShopConfig>();
         public static double tierTotal = 0;
 
@@ -66,6 +68,12 @@ namespace BossRush
             "-- BossSpawnCostReductionMultiplier",
             "Set how much less boss enemies (champions) cost the game to spawn. A higher value means that the game can afford to spawn more or stronger boss type enemies.\nSetting this to 2 e.g. should spawn two bosses on the first stage in single player, rather than just one. \n(Default value: 1.0 (float))",
             1f);
+
+            RandomBosses = config.Wrap(
+            "1. General",
+            "-- RandomBosses",
+            "Bosses will be random, rather than stage dependant.\n(Default value: false)",
+            false);
 
 
             // ITEM TIERS

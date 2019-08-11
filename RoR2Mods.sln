@@ -27,6 +27,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "libs", "libs", "{4F5103D6-1
 		libs\Mono.Cecil.dll = libs\Mono.Cecil.dll
 		libs\MonoMod.Utils.dll = libs\MonoMod.Utils.dll
 		libs\R2API.dll = libs\R2API.dll
+		libs\ReinDirectorCardLib.dll = libs\ReinDirectorCardLib.dll
 		libs\Unity.TextMeshPro.dll = libs\Unity.TextMeshPro.dll
 		libs\UnityEngine.CoreModule.dll = libs\UnityEngine.CoreModule.dll
 		libs\UnityEngine.dll = libs\UnityEngine.dll

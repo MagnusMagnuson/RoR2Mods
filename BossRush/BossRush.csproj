@@ -35,6 +35,9 @@
     <Reference Include="R2API">
       <HintPath>..\libs\R2API.dll</HintPath>
     </Reference>
+    <Reference Include="ReinDirectorCardLib">
+      <HintPath>..\libs\ReinDirectorCardLib.dll</HintPath>
+    </Reference>
     <Reference Include="Unity.TextMeshPro">
       <HintPath>..\libs\Unity.TextMeshPro.dll</HintPath>
     </Reference>

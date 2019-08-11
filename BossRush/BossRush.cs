@@ -12,6 +12,7 @@ using Mono.Cecil.Cil;
 namespace BossRush
 {
     [BepInDependency("com.bepis.r2api")]
+    [BepInDependency("com.ReinThings.ReinDirectorCardLib")]
     [BepInPlugin("com.MagnusMagnuson.BossRush", "BossRush", "0.5.0")]
     public class BossRush : BaseUnityPlugin
     {
@@ -37,6 +38,11 @@ namespace BossRush
                 gameMode = new AlternateMode();
             }
 
+            if (ModConfig.RandomBosses.Value)
+            {
+                RandomBoss.AddAllBossesToDirector();
+            }
+
             On.RoR2.ClassicStageInfo.GenerateDirectorCardWeightedSelection += ClassicStageInfo_GenerateDirectorCardWeightedSelection;
 
             On.RoR2.Run.OnServerTeleporterPlaced += Run_OnServerTeleporterPlaced;
@@ -50,7 +56,7 @@ namespace BossRush
             On.RoR2.PurchaseInteraction.OnInteractionBegin += PurchaseInteraction_OnInteractionBegin;
 
             On.RoR2.MultiShopController.CreateTerminals += MultiShopController_CreateTerminals;
-
+             
             On.RoR2.Run.BeginStage += Run_BeginStage;
 
             IL.RoR2.MultiShopController.Start += MultiShopController_Start;
@@ -238,11 +244,10 @@ namespace BossRush
                 {
                     foreach (DirectorCard directorCard in category.cards)
                     {
-                        //Debug.Log("DirectorCard Cost: " + directorCard.cost);
                         directorCard.cost = Mathf.RoundToInt(directorCard.cost * (1 / ModConfig.BossSpawnCostReductionMultiplier.Value));
-                        weightedSelection.AddChoice(directorCard, (float)directorCard.selectionWeight / num * category.selectionWeight);
-                        //weightedSelection.AddChoice(directorCard, selectionWeight);
+                        weightedSelection.AddChoice(directorCard, (float)directorCard.selectionWeight / num * category.selectionWeight);    
                     }
+
                 }
 
             }
