@@ -40,7 +40,7 @@ namespace BossRush
 
             if (ModConfig.RandomBosses.Value)
             {
-                RandomBoss.AddAllBossesToDirector();
+                RandomBoss.AddAllBossesToAllStages();
             }
 
             On.RoR2.ClassicStageInfo.GenerateDirectorCardWeightedSelection += ClassicStageInfo_GenerateDirectorCardWeightedSelection;

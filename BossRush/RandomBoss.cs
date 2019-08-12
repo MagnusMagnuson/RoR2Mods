@@ -9,7 +9,7 @@ namespace BossRush
 {
     class RandomBoss
     {
-        internal static void AddAllBossesToDirector()
+        internal static void AddAllBossesToAllStages()
         {
             List<DirectorCard> bossMonsterDirectorCards = new List<DirectorCard>();
             bossMonsterDirectorCards.Add(CreateDirectorCard("TitanMaster", 600, MapNodeGroup.GraphType.Ground));
@@ -35,7 +35,7 @@ namespace BossRush
             spawnCard.occupyPosition = false;
             spawnCard.sendOverNetwork = true;
             spawnCard.nodeGraphType = nodeGraphType;
-            spawnCard.name = bossName;
+            spawnCard.name = "csc"+ bossName.Substring(0, bossName.IndexOf("Master"));
 
             DirectorCard directorCard = new DirectorCard();
             directorCard.spawnCard = spawnCard;
