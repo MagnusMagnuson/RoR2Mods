@@ -131,10 +131,7 @@ namespace ShrineOfDio
                         string resurrectionMessage = $"<color=#beeca1>{interactor.GetComponent<CharacterBody>().GetUserName()}</color> resurrected <color=#beeca1>{deadCharacter.networkUser.userName}</color>";
                         Chat.SendBroadcastChat(new Chat.SimpleChatMessage
                         {
-
                             baseToken = resurrectionMessage
-
-
                         });
 
                         GameObject spawnEffect = Resources.Load<GameObject>("Prefabs/Effects/HippoRezEffect");

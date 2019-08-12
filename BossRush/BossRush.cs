@@ -79,14 +79,15 @@ namespace BossRush
                 x => x.MatchLdcI4(4),
                 x => x.MatchDiv()
             );
-            c.Index += 1;
-            c.RemoveRange(2);
-            c.Index += 3;
+            c.RemoveRange(3);
             c.Emit(OpCodes.Ldc_I4_2);
             c.Emit(OpCodes.Mul);
             c.Emit(OpCodes.Ldc_I4_5);
+            c.Index += 3;
+            c.Emit(OpCodes.Ldc_I4_2);
+            c.Emit(OpCodes.Mul);
+            c.Emit(OpCodes.Ldc_I4_3);
             c.Emit(OpCodes.Div);
-
         }
 
         private void SceneDirector_PopulateScene(On.RoR2.SceneDirector.orig_PopulateScene orig, SceneDirector self)
