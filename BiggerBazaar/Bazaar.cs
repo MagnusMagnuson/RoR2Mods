@@ -57,7 +57,7 @@ namespace BiggerBazaar
            
             GameObject itemGameObject = UnityEngine.Object.Instantiate<GameObject>(Resources.Load<GameObject>("Prefabs/NetworkedObjects/GenericPickup"), position, Quaternion.identity);
             itemGameObject.GetComponent<GenericPickupController>().transform.Translate(-2f, 4f, -3f, Space.World);
-            itemGameObject.GetComponent<GenericPickupController>().NetworkpickupIndex = new PickupIndex(rItem);
+            itemGameObject.GetComponent<GenericPickupController>().NetworkpickupIndex = PickupCatalog.FindPickupIndex(rItem);
 
             displayItems.Add(itemGameObject);
             NetworkServer.Spawn(itemGameObject);
@@ -68,7 +68,7 @@ namespace BiggerBazaar
             BazaarItem bazaarItem = new BazaarItem();
             bazaarItem.chestBehavior = chest.GetComponent<ChestBehavior>();
             bazaarItem.genericPickupController = itemGameObject.GetComponent<GenericPickupController>();
-            bazaarItem.pickupIndex = new PickupIndex(rItem);
+            bazaarItem.pickupIndex = PickupCatalog.FindPickupIndex(rItem);
             bazaarItem.purchaseCount = 0;
             bazaarItem.maxPurchases = GetMaxPurchaseAmount(itemTier);
 

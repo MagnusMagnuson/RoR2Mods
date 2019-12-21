@@ -10,7 +10,7 @@ using UnityEngine.SceneManagement;
 namespace BiggerBazaar
 {
     [BepInDependency("com.bepis.r2api")]
-    [BepInPlugin("com.MagnusMagnuson.BiggerBazaar", "BiggerBazaar", "1.4.3")]
+    [BepInPlugin("com.MagnusMagnuson.BiggerBazaar", "BiggerBazaar", "1.6.2")]
     public class BiggerBazaar : BaseUnityPlugin
     {
 
@@ -47,7 +47,7 @@ namespace BiggerBazaar
                 {
                     if (self.destinationScene)
                     {
-                        if (self.destinationScene.SceneName.Contains("bazaar") && !SceneInfo.instance.sceneDef.sceneName.Contains("bazaar"))
+                        if (self.destinationScene.baseSceneName.Contains("bazaar") && !SceneInfo.instance.sceneDef.baseSceneName.Contains("bazaar"))
                         {
                             bazaar.ResetBazaarPlayers();
                         }
@@ -138,16 +138,16 @@ namespace BiggerBazaar
                             {
                                 bazaarPlayer.lunarExchanges++;
                                 int money = bazaar.GetLunarCoinExchangeMoney();
-                                activator.GetComponent<CharacterBody>().master.GiveMoney((uint)money);
+                                activator.GetComponent<CharacterBody>().master.money += ((uint)money);
                                 networkUser.DeductLunarCoins((uint)self.cost);
                                 var goldReward = (int)((double)ModConfig.lunarCoinWorth.Value * (double)bazaar.currentDifficultyCoefficient);
                                 GameObject coinEmitterResource = Resources.Load<GameObject>("Prefabs/Effects/CoinEmitter");
-                                EffectManager.instance.SpawnEffect(coinEmitterResource, new EffectData()
+                                EffectManager.SpawnEffect(coinEmitterResource, new EffectData()
                                 {
                                     origin = self.transform.position,
                                     genericFloat = (float)goldReward
                                 }, true);
-                                EffectManager.instance.SpawnEffect(coinEmitterResource, new EffectData()
+                                EffectManager.SpawnEffect(coinEmitterResource, new EffectData()
                                 {
                                     origin = self.transform.position,
                                     genericFloat = (float)goldReward
@@ -176,7 +176,7 @@ namespace BiggerBazaar
                                 }
                                 Vector3 effectPos = self.transform.position;
                                 effectPos.y -= 1;
-                                EffectManager.instance.SpawnEffect(Resources.Load<GameObject>("Prefabs/Effects/ShrineUseEffect"), new EffectData()
+                                EffectManager.SpawnEffect(Resources.Load<GameObject>("Prefabs/Effects/ShrineUseEffect"), new EffectData()
                                 {
                                     origin = effectPos,
                                     rotation = Quaternion.identity,
@@ -275,17 +275,17 @@ namespace BiggerBazaar
                 }
             };
 
-            On.RoR2.Run.AdvanceStage += (orig, self, nextSceneName) =>
+            On.RoR2.Run.AdvanceStage += (orig, self, nextSceneDef) =>
             {
                 if (!SceneExitController.isRunning)
                 {
                     // advancing stage through cheats!
-                    if (nextSceneName.Equals("bazaar"))
+                    if (nextSceneDef.baseSceneName == "bazaar")
                     {
                         bazaar.ResetBazaarPlayers();
                     }
                 }
-                orig(self, nextSceneName);
+                orig(self, nextSceneDef);
             };
 
         }
