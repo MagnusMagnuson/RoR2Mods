@@ -13,7 +13,7 @@ using R2API.Utils;
 namespace ShrineOfDio
 {
     [BepInDependency("com.bepis.r2api")]
-    [BepInPlugin("com.MagnusMagnuson.ShrineOfDio", "ShrineOfDio", "1.1.0")]
+    [BepInPlugin("com.MagnusMagnuson.ShrineOfDio", "ShrineOfDio", "1.2.0")]
     public class ShrineOfDio : BaseUnityPlugin
     {
 
@@ -135,14 +135,14 @@ namespace ShrineOfDio
                         });
 
                         GameObject spawnEffect = Resources.Load<GameObject>("Prefabs/Effects/HippoRezEffect");
-                        EffectManager.instance.SpawnEffect(spawnEffect, new EffectData
+                        EffectManager.SpawnEffect(spawnEffect, new EffectData
                         {
                             origin = deadCharacter.master.GetBody().footPosition,
                             rotation = deadCharacter.master.gameObject.transform.rotation
                         }, true);
                         self.SetFieldValue("waitingForRefresh", true);
                         self.SetFieldValue("refreshTimer", 2f);
-                        EffectManager.instance.SpawnEffect(Resources.Load<GameObject>("Prefabs/Effects/ShrineUseEffect"), new EffectData()
+                        EffectManager.SpawnEffect(Resources.Load<GameObject>("Prefabs/Effects/ShrineUseEffect"), new EffectData()
                         {
                             origin = self.transform.position,
                             rotation = Quaternion.identity,
