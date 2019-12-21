@@ -46,7 +46,7 @@ namespace CheaperCauldrons
 
             redCost = Config.Wrap(
             "Config",
-            "greenCost",
+            "redCost",
             "Number of items needed to use the red item lunar cauldron.",
             3);
         }
