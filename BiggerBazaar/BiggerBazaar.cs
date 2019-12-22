@@ -124,16 +124,18 @@ namespace BiggerBazaar
             {
                 if (isCurrentStageBazaar)
                 {
+                    NetworkUser networkUser = Util.LookUpBodyNetworkUser(activator.gameObject);
+                    BazaarPlayer bazaarPlayer = bazaar.GetBazaarPlayer(networkUser);
                     if (!self.CanBeAffordedByInteractor(activator))
                     {
                         return;
                     }
+                    
                     if (bazaar.IsMoneyLunarPodAvailable())
                     {
                         if (bazaar.IsMoneyLunarPod(self.gameObject))
                         {
-                            NetworkUser networkUser = Util.LookUpBodyNetworkUser(activator.gameObject);
-                            BazaarPlayer bazaarPlayer = bazaar.GetBazaarPlayer(networkUser);
+                            
                             if (bazaarPlayer.lunarExchanges < ModConfig.maxLunarExchanges.Value || ModConfig.infiniteLunarExchanges)
                             {
                                 bazaarPlayer.lunarExchanges++;
@@ -158,35 +160,50 @@ namespace BiggerBazaar
                             return;
                         }
                     }
-                    if (ModConfig.isUsingShareSuite && !ModConfig.ShareSuiteItemSharingEnabled.Value)
-                    {
-                        List<BazaarItem> bazaarItems = bazaar.GetBazaarItems();
-                        for (int i = 0; i < bazaarItems.Count; i++)
-                        {
-                            PurchaseInteraction bazaarPI = bazaarItems[i].chestBehavior.GetComponent<PurchaseInteraction>();
-                            if (bazaarPI.Equals(self))
-                            {
-                                CharacterMaster master = activator.GetComponent<CharacterBody>().master;
-                                master.inventory.GiveItem(bazaarItems[i].pickupIndex.itemIndex);
-                                master.GiveMoney((uint)-self.cost);
-                                bazaarItems[i].purchaseCount++;
-                                if (!bazaar.IsChestStillAvailable(bazaarItems[i]))
-                                {
-                                    self.GetComponent<PurchaseInteraction>().SetAvailable(false);
-                                }
-                                Vector3 effectPos = self.transform.position;
-                                effectPos.y -= 1;
-                                EffectManager.SpawnEffect(Resources.Load<GameObject>("Prefabs/Effects/ShrineUseEffect"), new EffectData()
-                                {
-                                    origin = effectPos,
-                                    rotation = Quaternion.identity,
-                                    scale = 0.01f,
-                                    color = (Color32)Color.yellow
-                                }, true);
-                                PurchaseInteraction.CreateItemTakenOrb(self.gameObject.transform.position, activator.GetComponent<CharacterBody>().gameObject, bazaarItems[i].pickupIndex.itemIndex);
 
+                    // New addition that made everything less nice. Added for check if player still has purchases left
+                    int bazaarChestIndex = -1;
+                    List<BazaarItem> bazaarItems = bazaar.GetBazaarItems();
+                    PurchaseInteraction bazaarPI;
+                    for (int i = 0; i < bazaarItems.Count; i++)
+                    {
+                        bazaarPI = bazaarItems[i].chestBehavior.GetComponent<PurchaseInteraction>();
+                        if (bazaarPI.Equals(self))
+                        {
+                            if(!bazaar.PlayerHasPurchasesLeft(bazaarPlayer))
+                            {
                                 return;
                             }
+                            bazaarPlayer.chestPurchases++;
+                            bazaarChestIndex = i;
+                        }
+                    }
+
+                    if (ModConfig.isUsingShareSuite && !ModConfig.ShareSuiteItemSharingEnabled.Value)
+                    {
+                        if(bazaarChestIndex != -1) 
+                        {
+                            CharacterMaster master = activator.GetComponent<CharacterBody>().master;
+                            master.inventory.GiveItem(bazaarItems[bazaarChestIndex].pickupIndex.itemIndex);
+                            master.GiveMoney((uint)-self.cost);
+                            bazaarItems[bazaarChestIndex].purchaseCount++;
+                            if (!bazaar.IsChestStillAvailable(bazaarItems[bazaarChestIndex]))
+                            {
+                                self.GetComponent<PurchaseInteraction>().SetAvailable(false);
+                            }
+                            Vector3 effectPos = self.transform.position;
+                            effectPos.y -= 1;
+                            EffectManager.SpawnEffect(Resources.Load<GameObject>("Prefabs/Effects/ShrineUseEffect"), new EffectData()
+                            {
+                                origin = effectPos,
+                                rotation = Quaternion.identity,
+                                scale = 0.01f,
+                                color = (Color32)Color.yellow
+                            }, true);
+                            PurchaseInteraction.CreateItemTakenOrb(self.gameObject.transform.position, activator.GetComponent<CharacterBody>().gameObject, bazaarItems[bazaarChestIndex].pickupIndex.itemIndex);
+
+                            return;
+                        
                         }
                     }
                 }

@@ -16,6 +16,7 @@ namespace BiggerBazaar
         public static ConfigWrapper<int> maxChestPurchasesTier1;
         public static ConfigWrapper<int> maxChestPurchasesTier2;
         public static ConfigWrapper<int> maxChestPurchasesTier3;
+        public static ConfigWrapper<int> maxPlayerPurchases;
         public static ConfigWrapper<bool> ShareSuiteItemSharingEnabled;
         public static bool infiniteLunarExchanges = false;
         public static bool isUsingShareSuite;
@@ -83,6 +84,12 @@ namespace BiggerBazaar
             "maxChestPurchasesTier3",
             "Tier 3",
             1);
+
+            maxPlayerPurchases = config.Wrap(
+            "Config",
+            "maxPlayerPurchases",
+            "This sets how many total purchases a player is allowed to make. Set this to 0 for unlimited.",
+            0);
 
             lunarCoinWorth = config.Wrap(
             "Config",

@@ -280,6 +280,18 @@ namespace BiggerBazaar
             return false;
         }
 
+        public bool PlayerHasPurchasesLeft(BazaarPlayer bazaarPlayer)
+        {
+            if(ModConfig.maxPlayerPurchases.Value > 0)
+            {
+                if(bazaarPlayer.chestPurchases >= ModConfig.maxPlayerPurchases.Value)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
         public BazaarPlayer GetBazaarPlayer(NetworkUser networkUser)
         {
             for (int i = 0; i < bazaarPlayers.Count; i++)
