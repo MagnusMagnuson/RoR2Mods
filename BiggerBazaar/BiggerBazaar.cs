@@ -1,6 +1,9 @@
 ﻿using BepInEx;
+using BepInEx.Bootstrap;
 using R2API.Utils;
 using RoR2;
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using Unity;
 using UnityEngine;
@@ -10,16 +13,27 @@ using UnityEngine.SceneManagement;
 namespace BiggerBazaar
 {
     [BepInDependency("com.bepis.r2api")]
-    [BepInPlugin("com.MagnusMagnuson.BiggerBazaar", "BiggerBazaar", "1.6.2")]
+    [BepInDependency("com.funkfrog_sipondo.sharesuite", BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInPlugin("com.MagnusMagnuson.BiggerBazaar", "BiggerBazaar", "1.8.0")]
     public class BiggerBazaar : BaseUnityPlugin
     {
 
         bool isCurrentStageBazaar = false;
 
+        public static BaseUnityPlugin ShareSuite = null;
+
+        private void Start()
+        {
+            if (Chainloader.PluginInfos.ContainsKey("com.funkfrog_sipondo.sharesuite"))
+            {
+                ModConfig.SetShareSuiteReference(Chainloader.PluginInfos["com.funkfrog_sipondo.sharesuite"].Instance);
+            }
+        }
+
         public void Awake()
         {
 
-            ModConfig.initConfig(Config);
+            ModConfig.InitConfig(Config);
             Bazaar bazaar = new Bazaar();
             
 
@@ -140,9 +154,18 @@ namespace BiggerBazaar
                             {
                                 bazaarPlayer.lunarExchanges++;
                                 int money = bazaar.GetLunarCoinExchangeMoney();
-                                activator.GetComponent<CharacterBody>().master.money += ((uint)money);
+                                if(!ModConfig.IsShareSuiteMoneySharing())
+                                {
+                                    activator.GetComponent<CharacterBody>().master.money += ((uint)money);
+                                } else
+                                {
+                                    bazaar.ShareSuiteMoneyFix(activator, money);
+                                }
+                                //activator.GetComponent<CharacterBody>().master.money += ((uint)money);
+
+                                //activator.GetComponent<CharacterBody>().master.GiveMoney((uint)money);
                                 networkUser.DeductLunarCoins((uint)self.cost);
-                                var goldReward = (int)((double)ModConfig.lunarCoinWorth.Value * (double)bazaar.currentDifficultyCoefficient);
+                                var goldReward = (int)((double)ModConfig.lunarCoinWorth.Value * (double)bazaar.CurrentDifficultyCoefficient);
                                 GameObject coinEmitterResource = Resources.Load<GameObject>("Prefabs/Effects/CoinEmitter");
                                 EffectManager.SpawnEffect(coinEmitterResource, new EffectData()
                                 {
@@ -160,32 +183,56 @@ namespace BiggerBazaar
                             return;
                         }
                     }
-
-                    // New addition that made everything less nice. Added for check if player still has purchases left
+                    // New addition that made everything less nice. Added to check if player still has purchases left
                     int bazaarChestIndex = -1;
                     List<BazaarItem> bazaarItems = bazaar.GetBazaarItems();
                     PurchaseInteraction bazaarPI;
                     for (int i = 0; i < bazaarItems.Count; i++)
                     {
+                        // Fix for SavedGames. SavedGames somehow breaks the BiggerBazaar chests and BiggerBazaar breaks everything else in return :)
+                        if (bazaarItems[i].chestBehavior == null)
+                            continue;
                         bazaarPI = bazaarItems[i].chestBehavior.GetComponent<PurchaseInteraction>();
                         if (bazaarPI.Equals(self))
                         {
-                            if(!bazaar.PlayerHasPurchasesLeft(bazaarPlayer))
+                            if (!bazaar.PlayerHasPurchasesLeft(bazaarPlayer))
                             {
                                 return;
                             }
+                            ItemTier tier = ItemCatalog.GetItemDef(PickupCatalog.GetPickupDef(bazaarItems[i].pickupIndex).itemIndex).tier;
+                            if (!bazaar.PlayerHasTierPurchasesLeft(tier, bazaarPlayer)) {
+                                return;
+                            }
                             bazaarPlayer.chestPurchases++;
+                            bazaarPlayer.IncreaseTierPurchase(tier);
                             bazaarChestIndex = i;
+                            break;
                         }
                     }
-
+                    // Special case for ShareSuite
                     if (ModConfig.isUsingShareSuite && !ModConfig.ShareSuiteItemSharingEnabled.Value)
                     {
                         if(bazaarChestIndex != -1) 
                         {
                             CharacterMaster master = activator.GetComponent<CharacterBody>().master;
-                            master.inventory.GiveItem(bazaarItems[bazaarChestIndex].pickupIndex.itemIndex);
-                            master.GiveMoney((uint)-self.cost);
+                            master.inventory.GiveItem(PickupCatalog.GetPickupDef(bazaarItems[bazaarChestIndex].pickupIndex).itemIndex);
+                            if(ModConfig.chestCostType.Value == 1)
+                            {
+                                var netUser = Util.LookUpBodyNetworkUser(master.GetBody());
+                                netUser.DeductLunarCoins((uint)self.cost);
+                            }
+                            else
+                            {
+                                if (!ModConfig.IsShareSuiteMoneySharing())
+                                {
+                                    master.GiveMoney((uint)-self.cost);
+                                }
+                                else
+                                {
+                                    bazaar.ShareSuiteMoneyFix(activator, -self.cost);
+                                }
+                            }
+
                             bazaarItems[bazaarChestIndex].purchaseCount++;
                             if (!bazaar.IsChestStillAvailable(bazaarItems[bazaarChestIndex]))
                             {
@@ -200,7 +247,7 @@ namespace BiggerBazaar
                                 scale = 0.01f,
                                 color = (Color32)Color.yellow
                             }, true);
-                            PurchaseInteraction.CreateItemTakenOrb(self.gameObject.transform.position, activator.GetComponent<CharacterBody>().gameObject, bazaarItems[bazaarChestIndex].pickupIndex.itemIndex);
+                            PurchaseInteraction.CreateItemTakenOrb(self.gameObject.transform.position, activator.GetComponent<CharacterBody>().gameObject, PickupCatalog.GetPickupDef(bazaarItems[bazaarChestIndex].pickupIndex).itemIndex);
 
                             return;
                         
@@ -211,6 +258,7 @@ namespace BiggerBazaar
 
             };
 
+            // Trying not to hurt the shopkeep
             On.RoR2.FireworkLauncher.FireMissile += (orig, self) =>
             {
                 if(NetworkServer.active)
@@ -280,16 +328,18 @@ namespace BiggerBazaar
                             bazaar.ResetBazaarPlayers();
                             bazaar.CalcDifficultyCoefficient();
                         }
-                        bazaar.StartBazaar();
+                        bazaar.StartBazaar(this);
+                        if (ModConfig.BroadcastShopSettings.Value)
+                            StartCoroutine(BroadcastShopSettings());
                     }
                     else
                     {
                         isCurrentStageBazaar = false;
-                        orig(self);
-                        bazaar.currentDifficultyCoefficient = Run.instance.difficultyCoefficient;
+                        bazaar.CurrentDifficultyCoefficient = Run.instance.difficultyCoefficient;
 
                     }
                 }
+                orig(self);
             };
 
             On.RoR2.Run.AdvanceStage += (orig, self, nextSceneDef) =>
@@ -305,6 +355,77 @@ namespace BiggerBazaar
                 orig(self, nextSceneDef);
             };
 
+        }
+
+        IEnumerator BroadcastShopSettings()
+        {
+            yield return new WaitForSeconds(2);
+
+            string bazaarSettings = "";
+            bool stockSetting = false;
+            string stockString = "";
+            if(ModConfig.maxChestPurchasesTier1.Value != -1)
+            {
+                stockSetting = true;
+                stockString += "<color=#FFFFFF>Tier1: " + ModConfig.maxChestPurchasesTier1.Value + "</color>";
+            }
+            if (ModConfig.maxChestPurchasesTier2.Value != -1)
+            {
+                if (stockSetting) stockString += ", ";
+                stockSetting = true;
+                stockString += "<color=#08EB00>Tier2: " + ModConfig.maxChestPurchasesTier2.Value + "</color>";
+            }
+            if (ModConfig.maxChestPurchasesTier3.Value != -1)
+            {
+                if (stockSetting) stockString += ", ";
+                stockSetting = true;
+                stockString += "<color=#FF0000>Tier3: " + ModConfig.maxChestPurchasesTier3.Value + "</color>";
+            }
+            if (stockSetting)
+            {
+                bazaarSettings += "\nBazaar stock:: " + stockString + " item(s) per chest.";
+            }
+
+            bool totalSetting = false;
+            if (ModConfig.maxPlayerPurchases.Value != -1)
+            {
+                totalSetting = true;
+                bazaarSettings += "\nYou can buy a total of " + ModConfig.maxPlayerPurchases.Value + " items.";
+            }
+            bool tierSettings = false;
+            string tierString = "";
+            if (ModConfig.maxPlayerPurchasesTier1.Value > 0)
+            {
+                tierSettings = true;
+                tierString += "<color=#FFFFFF>" + ModConfig.maxPlayerPurchasesTier1.Value + " Tier1</color>";
+            }
+            if (ModConfig.maxPlayerPurchasesTier2.Value > 0)
+            {
+                if (tierSettings) tierString += ", ";
+                tierSettings = true;
+                tierString += "<color=#08EB00>" + ModConfig.maxPlayerPurchasesTier2.Value + " Tier2</color>";
+            }
+            if (ModConfig.maxPlayerPurchasesTier3.Value > 0)
+            {
+                if (tierSettings) tierString += ", ";
+                tierSettings = true;
+                tierString += "<color=#FF0000>" + ModConfig.maxPlayerPurchasesTier3.Value + " Tier3</color>";
+            }
+            if (tierSettings)
+            {
+                tierString = "\nYou can only buy up to " + tierString + " items.";
+                bazaarSettings += tierString;
+            }
+            bazaarSettings = "--Bazaar Restrictions--<color=#BCBCBC><size=16px>" + bazaarSettings + "</size></color>";
+
+            if(totalSetting || tierSettings || stockSetting)
+            {
+                Chat.SendBroadcastChat(new Chat.SimpleChatMessage
+                {
+                    baseToken = bazaarSettings
+                });
+            }
+            
         }
 
     }
