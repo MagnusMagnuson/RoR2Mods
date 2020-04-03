@@ -14,7 +14,7 @@ namespace BiggerBazaar
 {
     [BepInDependency("com.bepis.r2api")]
     [BepInDependency("com.funkfrog_sipondo.sharesuite", BepInDependency.DependencyFlags.SoftDependency)]
-    [BepInPlugin("com.MagnusMagnuson.BiggerBazaar", "BiggerBazaar", "1.8.0")]
+    [BepInPlugin("com.MagnusMagnuson.BiggerBazaar", "BiggerBazaar", "1.9.1")]
     public class BiggerBazaar : BaseUnityPlugin
     {
 
@@ -32,7 +32,6 @@ namespace BiggerBazaar
 
         public void Awake()
         {
-
             ModConfig.InitConfig(Config);
             Bazaar bazaar = new Bazaar();
             
@@ -291,6 +290,7 @@ namespace BiggerBazaar
                                 if (forceAll)
                                 {
                                     GeneratedNetworkCode._WritePickupIndex_None(writer, bazaarItems[i].pickupIndex);
+                                    writer.Write(self.Recycled);
                                     return true;
                                 }
                                 bool flag = false;
@@ -302,6 +302,15 @@ namespace BiggerBazaar
                                         flag = true;
                                     }
                                     GeneratedNetworkCode._WritePickupIndex_None(writer, bazaarItems[i].pickupIndex);
+                                }
+                                if ((self.GetComponent<NetworkBehaviour>().GetFieldValue<uint>("m_SyncVarDirtyBits") & 2u) != 0u)
+                                {
+                                    if (!flag)
+                                    {
+                                        writer.WritePackedUInt32(self.GetComponent<NetworkBehaviour>().GetFieldValue<uint>("m_SyncVarDirtyBits"));
+                                        flag = true;
+                                    }
+                                    writer.Write(self.Recycled);
                                 }
                                 if (!flag)
                                 {

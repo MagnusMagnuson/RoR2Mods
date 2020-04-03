@@ -58,7 +58,9 @@ namespace BiggerBazaar
 
             // chest players interact with
             SpawnCard chestCard = Resources.Load<SpawnCard>("SpawnCards/InteractableSpawnCard/iscChest1");
-            GameObject chest = chestCard.DoSpawn(position, Quaternion.Euler(new Vector3(0f, 0f, 0f)), null);
+            DirectorPlacementRule placementRule = new DirectorPlacementRule();
+            placementRule.placementMode = DirectorPlacementRule.PlacementMode.Direct;
+            GameObject chest = chestCard.DoSpawn(position, Quaternion.Euler(new Vector3(0f, 0f, 0f)), new DirectorSpawnRequest(chestCard, placementRule, Run.instance.runRNG)).spawnedInstance;
             chest.transform.eulerAngles = rotation;
 
             List<ItemIndex> drops = ItemDropAPI.GetDefaultDropList(itemTier);
@@ -100,7 +102,9 @@ namespace BiggerBazaar
         private void SpawnMoneyLunarPod(Vector3 moneyPodPosition)
         {
             SpawnCard chestCard = Resources.Load<SpawnCard>("SpawnCards/InteractableSpawnCard/iscLunarChest");
-            moneyLunarPod = chestCard.DoSpawn(moneyPodPosition, Quaternion.identity, null);
+            DirectorPlacementRule placementRule = new DirectorPlacementRule();
+            placementRule.placementMode = DirectorPlacementRule.PlacementMode.Direct;
+            moneyLunarPod = chestCard.DoSpawn(moneyPodPosition, Quaternion.identity, new DirectorSpawnRequest(chestCard, placementRule, Run.instance.runRNG)).spawnedInstance;
             displayItems.Add(moneyLunarPod);
         }
 
@@ -483,7 +487,9 @@ namespace BiggerBazaar
                 {
                     SpawnCard barrelCard = Resources.Load<SpawnCard>("SpawnCards/InteractableSpawnCard/iscBarrel1");
                     Vector3 barrelPosition = new Vector3(200f, 200f, 200f);
-                    GameObject barrelGameObject = barrelCard.DoSpawn(barrelPosition, Quaternion.identity, null);
+                    DirectorPlacementRule placementRule = new DirectorPlacementRule();
+                    placementRule.placementMode = DirectorPlacementRule.PlacementMode.Direct;
+                    GameObject barrelGameObject = barrelCard.DoSpawn(barrelPosition, Quaternion.identity, new DirectorSpawnRequest(barrelCard, placementRule, Run.instance.runRNG)).spawnedInstance;
                     barrelInteraction = barrelGameObject.GetComponent<BarrelInteraction>();
                 }
             }
