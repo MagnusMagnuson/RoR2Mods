@@ -13,7 +13,7 @@ using R2API.Utils;
 namespace ShrineOfDio
 {
     [BepInDependency("com.bepis.r2api")]
-    [BepInPlugin("com.MagnusMagnuson.ShrineOfDio", "ShrineOfDio", "1.2.0")]
+    [BepInPlugin("com.MagnusMagnuson.ShrineOfDio", "ShrineOfDio", "1.3.1")]
     public class ShrineOfDio : BaseUnityPlugin
     {
 
@@ -27,8 +27,34 @@ namespace ShrineOfDio
         public bool isBalancedMode = false;
      
 
+        //public void Update()
+        //{
+        //    if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.F10))
+        //    {
+
+        //        Xoroshiro128Plus xoroshiro128Plus = new Xoroshiro128Plus(1);
+        //        if (SceneInfo.instance.countsAsStage)
+        //        {
+        //            SpawnCard card = Resources.Load<SpawnCard>("SpawnCards/InteractableSpawnCard/iscShrineHealing");
+        //            GameObject gameObject3 = DirectorCore.instance.TrySpawnObject(new DirectorSpawnRequest(card, new DirectorPlacementRule
+        //            {
+        //                placementMode = DirectorPlacementRule.PlacementMode.NearestNode,
+        //                position = CameraRigController.readOnlyInstancesList[0].gameObject.transform.position
+        //            }, xoroshiro128Plus));
+
+        //            if (!UseBalancedMode.Value)
+        //            {
+        //                gameObject3.GetComponent<PurchaseInteraction>().Networkcost = GetDifficultyScaledCost(ResurrectionCost.Value);
+        //            }
+        //        }
+
+        //    }
+
+        //}
+
         public void Awake()
         {
+            //On.RoR2.Networking.GameNetworkManager.OnClientConnect += (self, user, t) => { };
             InitConfig();
 
 
@@ -244,7 +270,7 @@ namespace ShrineOfDio
             List<PlayerCharacterMasterController> deadCharacterList = new List<PlayerCharacterMasterController>();
             foreach (PlayerCharacterMasterController enumerator in PlayerCharacterMasterController.instances)
             {
-                if (!enumerator.master.alive)
+                if (enumerator.master.IsDeadAndOutOfLivesServer())
                 {
                     deadCharacterList.Add(enumerator);
                 }
@@ -259,7 +285,8 @@ namespace ShrineOfDio
         {
             foreach (PlayerCharacterMasterController enumerator in PlayerCharacterMasterController.instances)
             {
-                if (!enumerator.master.alive)
+                //if (!enumerator.master.GetBody().healthComponent.alive)
+                if (!enumerator.master.GetBody() || !enumerator.master.GetBody().healthComponent.alive)
                 {
                     return true;
                 }
@@ -287,3 +314,4 @@ namespace ShrineOfDio
 
     }
 }
+
