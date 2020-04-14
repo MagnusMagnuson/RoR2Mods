@@ -16,10 +16,9 @@ using Random = System.Random;
 namespace TemporaryLunarCoins
 {
     [BepInDependency("com.bepis.r2api")]
-    [BepInPlugin("com.MagnusMagnuson.TemporaryLunarCoins", "TemporaryLunarCoins", "0.1.0")]
+    [BepInPlugin("com.MagnusMagnuson.TemporaryLunarCoins", "TemporaryLunarCoins", "0.2.0")]
     public class TemporaryLunarCoins : BaseUnityPlugin
     {
-        //private static TemporaryLunarCoins instance;
         bool AllAgree = false;
         static List<SteamPlayer> SteamPlayers = new List<SteamPlayer>();
 
@@ -29,7 +28,6 @@ namespace TemporaryLunarCoins
 
         public void Awake()
         {
-            //instance = this;
 
             ChangeDroprate = Config.Bind("", "ChangeDroprate", true, new ConfigDescription("If this is set to false, it will ignore the other values and use vanilla settings."));
             DropChance = Config.Bind("", "DropChance", 1.5f, new ConfigDescription("The initial value to drop coins. Vanilla is 1 (percent)"));
@@ -39,10 +37,9 @@ namespace TemporaryLunarCoins
 
             On.RoR2.Chat.UserChatMessage.ConstructChatString += UserChatMessage_ConstructChatString;
 
-            //IL.RoR2.PlayerCharacterMasterController.Init += PlayerCharacterMasterController_Init;
             //Taken from LoonerCoins
             BindingFlags allFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly;
-            var initDelegate = typeof(PlayerCharacterMasterController).GetNestedTypes(allFlags)[0].GetMethodCached(name: "<Init>b__56_0");
+            var initDelegate = typeof(PlayerCharacterMasterController).GetNestedTypes(allFlags)[0].GetMethodCached(name: "<Init>b__61_0");
 
             if (ChangeDroprate.Value)
             {
@@ -192,42 +189,6 @@ namespace TemporaryLunarCoins
 
 
         }
-
-
-        // Kind of pointless commands and apparently not working in multi?!
-
-        //[ConCommand(commandName = "tlc_kickrest", flags = ConVarFlags.ExecuteOnServer, helpText = "Kick players that haven't readied yet. Restarting the game is preferred since the game still assumes more players.")]
-        //private static void CCKickNotReadyPlayers(ConCommandArgs args)
-        //{
-        //    foreach (SteamPlayer playerInstance in SteamPlayers)
-        //    {
-        //        if(!playerInstance.isReady)
-        //        {
-        //            GameNetworkManager.singleton.ServerKickClient(playerInstance.networkConnection, GameNetworkManager.KickReason.Kick);
-        //            Chat.SendBroadcastChat(new Chat.SimpleChatMessage()
-        //            {
-        //                baseToken = "Kicking player " + playerInstance.playerName + "."
-        //            });
-        //        }
-        //    }
-        //}
-
-        //[ConCommand(commandName = "tlc_forceready", flags = ConVarFlags.ExecuteOnServer, helpText = "Sets all not ready players to ready, without removing any lunar coins.")]
-        //private static void CCForceReady(ConCommandArgs args)
-        //{
-        //    Chat.SendBroadcastChat(new Chat.SimpleChatMessage()
-        //    {
-        //        baseToken = "Setting everyone to ready."
-        //    });
-        //    foreach (SteamPlayer playerInstance in SteamPlayers)
-        //    {
-        //        if (!playerInstance.isReady)
-        //        {
-        //            playerInstance.isReady = true;
-        //        }
-        //        instance.UnfreezePlayers();
-        //    }
-        //}
 
     }
 
