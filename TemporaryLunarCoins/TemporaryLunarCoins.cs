@@ -44,6 +44,7 @@ namespace TemporaryLunarCoins
             DropMulti = Config.Bind("", "DropMulti", 0.5f, new ConfigDescription("The multiplier for which, after every lunar coin is dropped, modifies the current dropchance. Results in diminishing returns. Vanilla  is 0.5 (percent)."));
             SkipOnSinglePlayer = Config.Bind("", "SkipOnSinglePlayer", false, new ConfigDescription("If this is set to true, Lunar Coins are automatically removed in single player."));
 
+            //RoR2.Run.onRunStartGlobal += Run_Start; //Apparently the proper way to do it, since the game natively has an event for it. But ProperSave is now il hooking TLC to deal with compatibility issues I believe, so just leaving as is, as ProperSave breaks otherwise.
             On.RoR2.Run.Start += Run_Start;
 
             On.RoR2.Chat.UserChatMessage.ConstructChatString += UserChatMessage_ConstructChatString;
@@ -66,11 +67,11 @@ namespace TemporaryLunarCoins
             self.SetFieldValue("lunarCoinChanceMultiplier", DropChance.Value);
         }
 
+
         private void Run_Start(On.RoR2.Run.orig_Start orig, Run self)
         {
             orig(self);
-
-            if (Run.instance.stageClearCount == 0)
+            if (Run.instance.stageClearCount == 0) // ProperSave already added a fix for this.
             {
                 if (RoR2Application.isInSinglePlayer && SkipOnSinglePlayer.Value)
                 {
@@ -81,7 +82,7 @@ namespace TemporaryLunarCoins
                     SteamPlayers = PopulateSteamPlayersList();
                     StartCoroutine(StartCoinRemovalAgreement());
                 }
-                
+
             }
         }
 
