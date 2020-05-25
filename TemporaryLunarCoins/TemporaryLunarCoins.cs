@@ -16,7 +16,7 @@ using Random = System.Random;
 namespace TemporaryLunarCoins
 {
     [BepInDependency("com.bepis.r2api")]
-    [BepInPlugin("com.MagnusMagnuson.TemporaryLunarCoins", "TemporaryLunarCoins", "0.2.0")]
+    [BepInPlugin("com.MagnusMagnuson.TemporaryLunarCoins", "TemporaryLunarCoins", "0.2.1")]
     public class TemporaryLunarCoins : BaseUnityPlugin
     {
         bool AllAgree = false;
@@ -25,6 +25,16 @@ namespace TemporaryLunarCoins
         private static ConfigEntry<bool> ChangeDroprate;
         private static ConfigEntry<float> DropChance;
         private static ConfigEntry<float> DropMulti;
+        private static ConfigEntry<bool> SkipOnSinglePlayer;
+
+
+        //public void Update()
+        //{
+        //    if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.C))
+        //    {
+        //        PlayerCharacterMasterController.instances[0].networkUser.AwardLunarCoins(10);
+        //    }
+        //}
 
         public void Awake()
         {
@@ -32,6 +42,7 @@ namespace TemporaryLunarCoins
             ChangeDroprate = Config.Bind("", "ChangeDroprate", true, new ConfigDescription("If this is set to false, it will ignore the other values and use vanilla settings."));
             DropChance = Config.Bind("", "DropChance", 1.5f, new ConfigDescription("The initial value to drop coins. Vanilla is 1 (percent)"));
             DropMulti = Config.Bind("", "DropMulti", 0.5f, new ConfigDescription("The multiplier for which, after every lunar coin is dropped, modifies the current dropchance. Results in diminishing returns. Vanilla  is 0.5 (percent)."));
+            SkipOnSinglePlayer = Config.Bind("", "SkipOnSinglePlayer", false, new ConfigDescription("If this is set to true, Lunar Coins are automatically removed in single player."));
 
             On.RoR2.Run.Start += Run_Start;
 
@@ -58,9 +69,20 @@ namespace TemporaryLunarCoins
         private void Run_Start(On.RoR2.Run.orig_Start orig, Run self)
         {
             orig(self);
-            AllAgree = false;
-            SteamPlayers = PopulateSteamPlayersList();
-            StartCoroutine(StartCoinRemovalAgreement());
+
+            if (Run.instance.stageClearCount == 0)
+            {
+                if (RoR2Application.isInSinglePlayer && SkipOnSinglePlayer.Value)
+                {
+                    StartCoroutine(DelayedAutomaticCoinRemoval());
+                } else
+                {
+                    AllAgree = false;
+                    SteamPlayers = PopulateSteamPlayersList();
+                    StartCoroutine(StartCoinRemovalAgreement());
+                }
+                
+            }
         }
 
         private List<SteamPlayer> PopulateSteamPlayersList()
@@ -76,7 +98,7 @@ namespace TemporaryLunarCoins
 
         private string UserChatMessage_ConstructChatString(On.RoR2.Chat.UserChatMessage.orig_ConstructChatString orig, Chat.UserChatMessage self)
         {
-            if(!AllAgree && self.text.ToLower().Equals("tlc_aye"))
+            if(!AllAgree && (self.text.ToLower().Trim().Equals("tlc_aye") || self.text.ToLower().Trim().Equals("tic_aye")))
             {
                 NetworkUser networkUser = self.sender.GetComponent<NetworkUser>();
                 if (networkUser)
@@ -188,6 +210,17 @@ namespace TemporaryLunarCoins
             }
 
 
+        }
+
+        public IEnumerator DelayedAutomaticCoinRemoval()
+        {
+            yield return new WaitForSeconds(4f);
+            RemoveLunarCoins();
+            Chat.SendBroadcastChat(new Chat.SimpleChatMessage
+            {
+                baseToken = " -- Temporary Lunar Coins --" +
+            "\n<size=15px>Automatically removed lunar coins.</size>"
+            });
         }
 
     }
