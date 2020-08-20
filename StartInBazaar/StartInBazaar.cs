@@ -1,4 +1,5 @@
 ﻿using BepInEx;
+using R2API.Utils;
 using RoR2;
 using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
@@ -6,8 +7,9 @@ using UnityEngine.SceneManagement;
 namespace StartInBazaar
 {
     [BepInDependency("com.bepis.r2api")]
-    [BepInPlugin("com.MagnusMagnuson.StartInBazaar", "StartInBazaar", "0.1.0")]
-    public class StartInBazaar : BaseUnityPlugin
+    [BepInPlugin("com.MagnusMagnuson.StartInBazaar", "StartInBazaar", "0.1.1")]
+    [NetworkCompatibility(CompatibilityLevel.NoNeedForSync, VersionStrictness.DifferentModVersionsAreOk)]
+    public class StartInBazaar : BaseUnityPlugin 
     {
         bool isFirstBazaarVisit = true;
         bool isFirstStage = true;
@@ -23,7 +25,8 @@ namespace StartInBazaar
                 isFirstStage = true;
             };
 
-            On.RoR2.SceneDirector.Start += (orig, self) =>
+            On.RoR2.BazaarController.Start += (orig, self) =>
+            //On.RoR2.SceneDirector.Start += (orig, self) =>
             {
                 if (NetworkServer.active)
                 {
