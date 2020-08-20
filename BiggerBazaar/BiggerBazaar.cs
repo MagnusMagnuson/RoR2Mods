@@ -5,6 +5,8 @@ using RoR2;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using Unity;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -14,13 +16,15 @@ namespace BiggerBazaar
 {
     [BepInDependency("com.bepis.r2api")]
     [BepInDependency("com.funkfrog_sipondo.sharesuite", BepInDependency.DependencyFlags.SoftDependency)]
-    [BepInPlugin("com.MagnusMagnuson.BiggerBazaar", "BiggerBazaar", "1.9.1")]
+    [BepInPlugin("com.MagnusMagnuson.BiggerBazaar", "BiggerBazaar", "1.9.4")]
+    [NetworkCompatibility(CompatibilityLevel.NoNeedForSync, VersionStrictness.DifferentModVersionsAreOk)]
     public class BiggerBazaar : BaseUnityPlugin
     {
 
         bool isCurrentStageBazaar = false;
 
-        public static BaseUnityPlugin ShareSuite = null;
+        //public static BaseUnityPlugin ShareSuite;
+        //ShareSuite
 
         private void Start()
         {
@@ -30,9 +34,30 @@ namespace BiggerBazaar
             }
         }
 
+        //public void Update()
+        //{
+        //    if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.F))
+        //    {
+        //        ShareSuite.MoneySharingHooks.AddMoneyExternal(100);
+        //    }
+        //}
+
         public void Awake()
         {
             ModConfig.InitConfig(Config);
+
+
+            //if (Chainloader.PluginInfos.ContainsKey("com.funkfrog_sipondo.sharesuite"))
+            //{
+
+            //    ModConfig.SetShareSuiteReference(Chainloader.PluginInfos["com.funkfrog_sipondo.sharesuite"].Instance);
+            //    Debug.Log(ModConfig.GetShareSuiteReference());
+            //    AddMoney = ShareSuite.GetType().GetMethod("AddMoneyExternal", BindingFlags.Static | BindingFlags.Public
+
+
+            //    AddMoney = ModConfig.GetShareSuiteReference().GetType().GetMethod("AddMoneyExternal", BindingFlags.Instance | BindingFlags.Public | BindingFlags.Static | BindingFlags.NonPublic);
+            //}
+
             Bazaar bazaar = new Bazaar();
             
 
@@ -324,12 +349,24 @@ namespace BiggerBazaar
                 return orig(self, writer, forceAll);
             };
 
-            On.RoR2.SceneDirector.Start += (orig, self) =>
+            On.RoR2.BazaarController.Start += (orig, self) =>
+            //On.RoR2.SceneDirector.Start += (orig, self) =>
             {
                 if (NetworkServer.active)
                 {
                     if (SceneManager.GetActiveScene().name.Contains("bazaar"))
                     {
+                        var sacrificeArtifactDef = ArtifactCatalog.FindArtifactDef("Sacrifice");
+                        bool isUsingSacrificeArtifact = false;
+                        if (RunArtifactManager.instance.IsArtifactEnabled(sacrificeArtifactDef)) {
+                            if(!ModConfig.sacrificeArtifactAllowChests.Value)
+                            {
+                                orig(self);
+                            }
+                            isUsingSacrificeArtifact = true;
+                            RunArtifactManager.instance.SetArtifactEnabledServer(sacrificeArtifactDef, false);
+                        }
+                        
                         isCurrentStageBazaar = true;
                         // only the case if you start the run in the bazaar
                         if (Run.instance.stageClearCount == 0)
@@ -338,6 +375,10 @@ namespace BiggerBazaar
                             bazaar.CalcDifficultyCoefficient();
                         }
                         bazaar.StartBazaar(this);
+                        if(isUsingSacrificeArtifact)
+                        {
+                            RunArtifactManager.instance.SetArtifactEnabledServer(sacrificeArtifactDef, true);
+                        }
                         if (ModConfig.BroadcastShopSettings.Value)
                             StartCoroutine(BroadcastShopSettings());
                     }

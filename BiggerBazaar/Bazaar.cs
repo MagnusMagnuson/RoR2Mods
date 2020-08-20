@@ -28,7 +28,6 @@ namespace BiggerBazaar
         BarrelInteraction barrelInteraction;
 
 
-
         public Bazaar()
         {
             FillBazaarItemPositionsAndRotations();
@@ -74,16 +73,19 @@ namespace BiggerBazaar
             displayItems.Add(itemGameObject);
             NetworkServer.Spawn(itemGameObject);
 
-            if(ModConfig.chestCostType.Value == 1)
+            var chestPI = chest.GetComponent<PurchaseInteraction>();
+
+            if (ModConfig.chestCostType.Value == 1)
             {
-                chest.GetComponent<PurchaseInteraction>().costType = CostTypeIndex.LunarCoin;
-                chest.GetComponent<PurchaseInteraction>().Networkcost = cost;
+                chestPI.costType = CostTypeIndex.LunarCoin;
+                chestPI.Networkcost = cost;
+                //chestPI.SetDirtyBit(12u);
             }
             else if(cost == -1) {
-                chest.GetComponent<PurchaseInteraction>().Networkcost = GetDifficultyScaledCostFromItemTier(ItemCatalog.GetItemDef(rItem).tier);
+                chestPI.Networkcost = GetDifficultyScaledCostFromItemTier(ItemCatalog.GetItemDef(rItem).tier);
             } else
             {
-                chest.GetComponent<PurchaseInteraction>().Networkcost = GetDifficultyScaledCost(cost);
+                chestPI.Networkcost = GetDifficultyScaledCost(cost);
             }
             
 
@@ -382,6 +384,7 @@ namespace BiggerBazaar
             bazaarItems.Clear();
         }
 
+        
         public void StartBazaar(BiggerBazaar biggerBazaar)
         {
             isUsingexperimentalScaling = false;
@@ -391,16 +394,35 @@ namespace BiggerBazaar
                 {
                     if (bazaarPlayers[j].networkUser == PlayerCharacterMasterController.instances[i].networkUser)
                     {
-                        if(!ModConfig.IsShareSuiteMoneySharing())
+                        if (!ModConfig.IsShareSuiteMoneySharing())
                         {
                             PlayerCharacterMasterController.instances[i].master.money = bazaarPlayers[j].money;
-                        } else
-                        {
-                            biggerBazaar.StartCoroutine(TriggerInteractorBarrelInteraction(PlayerCharacterMasterController.instances[i].master, (int)bazaarPlayers[j].money));
-                            goto done;
+                            break;
                         }
-                       
-                        break;
+                        //else
+                        //{
+                            //Debug.Log(BiggerBazaar.ShareSuite);
+                            //Debug.Log(BiggerBazaar.AddMoney);
+                            //Debug.Log(ModConfig.GetShareSuiteReference());
+                            //Reflection.InvokeMethod(BiggerBazaar.ShareSuite, "AddMoneyExternal", new object[] { (int)bazaarPlayers[j].money });
+                            //BiggerBazaar.ShareSuite.Invoke("AddMoneyExternal");
+                            //BiggerBazaar.AddMoney.Invoke(BiggerBazaar.ShareSuite, new object[] { bazaarPlayers[j].money });
+                            //biggerBazaar.StartCoroutine(TriggerInteractorBarrelInteraction(PlayerCharacterMasterController.instances[i].master, (int)bazaarPlayers[j].money));
+
+                            //Debug.Log("giving: " + (int)bazaarPlayers[j].money);
+                            ////int mons = (int)bazaarPlayers[j].money;
+                            //ShareSuite.MoneySharingHooks.SharedMoneyValue = 0;
+                            //ShareSuite.MoneySharingHooks.SetTeleporterActive(false);
+                            //ShareSuite.MoneySharingHooks.AddMoneyExternal((int)bazaarPlayers[j].money);
+
+                            //PlayerCharacterMasterController.instances[i].master.GiveMoney(bazaarPlayers[j].money);
+                            //biggerBazaar.StartCoroutine(DelayAddMonexExternal(PlayerCharacterMasterController.instances[i].master, mons));
+
+                            biggerBazaar.StartCoroutine(TriggerInteractorBarrelInteraction(PlayerCharacterMasterController.instances[i].master, (int)this.bazaarPlayers[j].money));
+                            goto done; 
+                        //}
+
+                        //break;
                     }
                 }
             }
@@ -466,7 +488,7 @@ namespace BiggerBazaar
                 }
                 priceScaledLunarPodBaseCost = (int)(tier1BaseCost * ((1f / randomMult) * tierRatio[ItemTier.Tier2]));
 
-            } else if(!ModConfig.experimentalPriceScaling.Value)
+            } else 
             // regular price
             {
 
@@ -475,8 +497,8 @@ namespace BiggerBazaar
                     SpawnBazaarItemAt(bazaarItemPositions[i], bazaarItemRotations[i], bazaarItemTiers[i], -1);
                 }
 
-            } 
-            
+            }
+
             if (ModConfig.maxLunarExchanges.Value != 0) 
                 SpawnMoneyLunarPod(moneyPodPosition);
 
@@ -501,6 +523,15 @@ namespace BiggerBazaar
             yield return new WaitUntil(() => master.GetBody().gameObject.GetComponentInChildren<Interactor>() != null);
             ShareSuiteMoneyFix(master.GetBody().gameObject.GetComponentInChildren<Interactor>(), money - Math.Abs((int)master.money));
         }
+
+        //IEnumerator DelayAddMonexExternal(CharacterMaster master, int money)
+        //{
+        //    yield return new WaitUntil(() => master.GetBody() != null);
+        //    yield return new WaitUntil(() => master.GetBody().gameObject.GetComponentInChildren<Interactor>() != null);
+        //    yield return new WaitForSeconds(3f);
+        //    MoneySharingHooks.AddMoneyExternal(money);
+        //    Debug.Log("jakd");
+        //}
 
         public float CurrentDifficultyCoefficient
         {
