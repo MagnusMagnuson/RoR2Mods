@@ -4,11 +4,13 @@ using UnityEngine;
 using System.Collections.Generic;
 using UnityEngine.Networking;
 using RoR2.Networking;
+using R2API.Utils;
 
 namespace ItemExchangeNotifier
 {
     [BepInDependency("com.bepis.r2api")]
-    [BepInPlugin("com.MagnusMagnuson.ItemExchangeNotifier", "ItemExchangeNotifier", "1.3.0")]
+    [BepInPlugin("com.MagnusMagnuson.ItemExchangeNotifier", "ItemExchangeNotifier", "1.3.1")]
+    [NetworkCompatibility(CompatibilityLevel.NoNeedForSync, VersionStrictness.DifferentModVersionsAreOk)]
     public class ItemExchangeNotifier : BaseUnityPlugin
     {
         public void Awake()
