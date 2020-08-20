@@ -38,7 +38,8 @@ namespace ShrineOfDio
 
             On.RoR2.OutsideInteractableLocker.LockPurchasable += OutsideInteractableLocker_LockPurchasable;
 
-            On.RoR2.SceneDirector.PopulateScene += (orig, self) =>
+            On.RoR2.SceneDirector.PlaceTeleporter += (orig, self) =>
+            //On.RoR2.SceneDirector.PopulateScene += (orig, self) =>
             {
                 orig(self);
                 if (!RoR2Application.isInSinglePlayer)
