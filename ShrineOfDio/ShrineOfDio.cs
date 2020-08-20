@@ -14,12 +14,14 @@ using RoR2.Networking;
 namespace ShrineOfDio
 {
     [BepInDependency("com.bepis.r2api")]
-    [BepInPlugin("com.MagnusMagnuson.ShrineOfDio", "ShrineOfDio", "1.3.2")]
+    [BepInPlugin("com.MagnusMagnuson.ShrineOfDio", "ShrineOfDio", "1.3.4")]
+    [NetworkCompatibility(CompatibilityLevel.NoNeedForSync, VersionStrictness.DifferentModVersionsAreOk)]
     public class ShrineOfDio : BaseUnityPlugin
     {
 
-        public static ConfigWrapper<bool> UseBalancedMode;
-        public static ConfigWrapper<int> ResurrectionCost;
+        public static ConfigEntry<bool> UseBalancedMode;
+        public static ConfigEntry<int> ResurrectionCost;
+        public static ConfigEntry<bool> AllowDuringTeleporterCharge;
 
         public const int UNINITIALIZED = -2;
         public const int BALANCED_MODE = -1;
@@ -32,6 +34,9 @@ namespace ShrineOfDio
         {
             InitConfig();
 
+            //On.RoR2.PurchaseInteraction.OnTeleporterBeginCharging += PurchaseInteraction_OnTeleporterBeginCharging;
+
+            On.RoR2.OutsideInteractableLocker.LockPurchasable += OutsideInteractableLocker_LockPurchasable;
 
             On.RoR2.SceneDirector.PopulateScene += (orig, self) =>
             {
@@ -93,6 +98,7 @@ namespace ShrineOfDio
                     pi.displayNameToken = "Shrine of Dio";
                     self.costMultiplierPerPurchase = 1f;
                     
+
                     if (NetworkServer.active)
                     {
                         isBalancedMode = UseBalancedMode.Value;
@@ -202,19 +208,43 @@ namespace ShrineOfDio
 
         }
 
+
+        private void OutsideInteractableLocker_LockPurchasable(On.RoR2.OutsideInteractableLocker.orig_LockPurchasable orig, OutsideInteractableLocker self, PurchaseInteraction purchaseInteraction)
+        {
+            if(AllowDuringTeleporterCharge.Value)
+            {
+                if (purchaseInteraction.displayNameToken.Equals("Shrine of Dio") || purchaseInteraction.displayNameToken.Contains("SHRINE_HEALING"))
+                {
+                    return;
+                }
+            }
+            orig(self, purchaseInteraction);
+            
+        }
+
+
         private void InitConfig()
         {
-            UseBalancedMode = Config.Wrap(
+            UseBalancedMode = Config.Bind(
             "Config",
             "UseBalancedMode",
-            "Setting this to true will only allow you to resurrect other players for one of your Dio's Best Friend. Turning this off will allow you to instead use gold.",
-            false);
+            false,
+            new ConfigDescription("Setting this to true will only allow you to resurrect other players for one of your Dio's Best Friend. Turning this off will allow you to instead use gold.")
+            );
 
-            ResurrectionCost = Config.Wrap(
+            ResurrectionCost = Config.Bind(
             "Config",
             "ResurrectionCost",
-            "[Only active if you set UseBalancedMode to false] Cost for a resurrection. Scales with difficulty but doesn't increase each usage. Regular Chest cost is 25, Golden/Legendary Chest is 400. Default is 300.",
-            300);
+            300,
+            new ConfigDescription("[Only active if you set UseBalancedMode to false] Cost for a resurrection. Scales with difficulty but doesn't increase each usage. Regular Chest cost is 25, Golden/Legendary Chest is 400. Default is 300.")
+            );
+
+            AllowDuringTeleporterCharge = Config.Bind(
+            "Config",
+            "AllowDuringTeleporterCharge",
+            false,
+            new ConfigDescription("Allows the Shrine of Dio to be used while the teleporter charges/prevents lock.")
+            );
         }
 
         private void UpdateShrineDisplay(ShrineHealingBehavior self)
