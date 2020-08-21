@@ -29,8 +29,10 @@ namespace ShrineOfDio
         public int clientCost = UNINITIALIZED;
         public bool isBalancedMode = false;
 
+        private HashSet<NetworkUser> isDead = new HashSet<NetworkUser>();
 
-    public void Awake()
+
+        public void Awake()
         {
             InitConfig();
 
@@ -46,18 +48,18 @@ namespace ShrineOfDio
                 {
                     SpawnShrineOfDio(self);
                 }
-                
+
             };
 
             On.RoR2.ShrineHealingBehavior.FixedUpdate += (orig, self) =>
             {
                 orig(self);
-                if(!NetworkServer.active)
+                if (!NetworkServer.active)
                 {
-                    if(clientCost == UNINITIALIZED)
+                    if (clientCost == UNINITIALIZED)
                     {
                         int piCost = self.GetFieldValue<PurchaseInteraction>("purchaseInteraction").cost;
-                        if(piCost != clientCost)
+                        if (piCost != clientCost)
                         {
                             clientCost = piCost;
                             if (clientCost == BALANCED_MODE)
@@ -89,6 +91,13 @@ namespace ShrineOfDio
                 }
             };
 
+            On.RoR2.Stage.Start += (orig, self) =>
+            {
+                orig(self);
+                if (!RoR2Application.isInSinglePlayer && NetworkServer.active)
+                    isDead.Clear();
+            };
+
             On.RoR2.ShrineHealingBehavior.Awake += (orig, self) =>
             {
                 orig(self);
@@ -98,7 +107,7 @@ namespace ShrineOfDio
                     pi.contextToken = "Offer to the Shrine of Dio";
                     pi.displayNameToken = "Shrine of Dio";
                     self.costMultiplierPerPurchase = 1f;
-                    
+
 
                     if (NetworkServer.active)
                     {
@@ -134,6 +143,13 @@ namespace ShrineOfDio
                     if (NetworkServer.active)
                     {
                         PlayerCharacterMasterController deadCharacter = GetRandomDeadCharacter();
+                        isDead.Remove(deadCharacter.networkUser);
+
+                        GameObject prefab = BodyCatalog.GetBodyPrefab(deadCharacter.networkUser.NetworkbodyIndexPreference);
+                        if (prefab != null)
+                        {
+                            deadCharacter.master.bodyPrefab = prefab;
+                        }
                         deadCharacter.master.Respawn(deadCharacter.master.GetFieldValue<Vector3>("deathFootPosition"), deadCharacter.master.transform.rotation, true);
 
                         string resurrectionMessage = $"<color=#beeca1>{interactor.GetComponent<CharacterBody>().GetUserName()}</color> resurrected <color=#beeca1>{deadCharacter.networkUser.userName}</color>";
@@ -167,11 +183,31 @@ namespace ShrineOfDio
                             cb.inventory.GiveItem(ItemIndex.ExtraLifeConsumed, 1);
                         }
                     }
-                } else
+                }
+                else
                 {
                     orig(self, interactor);
                 }
-                
+
+            };
+
+            On.RoR2.CharacterMaster.OnBodyDeath += (orig, self, masterbody) =>
+            {
+                orig(self, masterbody);
+                if (!RoR2Application.isInSinglePlayer)
+                {
+                    if (NetworkServer.active)
+                    {
+                        if (masterbody.isPlayerControlled)
+                        {
+                            PlayerCharacterMasterController player = self.GetComponent<PlayerCharacterMasterController>();
+                            if (!isDead.Contains(player.networkUser))
+                            {
+                                isDead.Add(player.networkUser);
+                            }
+                        }
+                    }
+                }
             };
 
             On.RoR2.PurchaseInteraction.CanBeAffordedByInteractor += (orig, self, interactor) =>
@@ -212,7 +248,7 @@ namespace ShrineOfDio
 
         private void OutsideInteractableLocker_LockPurchasable(On.RoR2.OutsideInteractableLocker.orig_LockPurchasable orig, OutsideInteractableLocker self, PurchaseInteraction purchaseInteraction)
         {
-            if(AllowDuringTeleporterCharge.Value)
+            if (AllowDuringTeleporterCharge.Value)
             {
                 if (purchaseInteraction.displayNameToken.Equals("Shrine of Dio") || purchaseInteraction.displayNameToken.Contains("SHRINE_HEALING"))
                 {
@@ -220,7 +256,7 @@ namespace ShrineOfDio
                 }
             }
             orig(self, purchaseInteraction);
-            
+
         }
 
 
@@ -268,19 +304,19 @@ namespace ShrineOfDio
 
         private int GetDifficultyScaledCost(int baseCost)
         {
-            return (int)((double) baseCost * (double)Mathf.Pow(Run.instance.difficultyCoefficient, 1.25f)); // 1.25f
+            return (int)((double)baseCost * (double)Mathf.Pow(Run.instance.difficultyCoefficient, 1.25f)); // 1.25f
         }
 
         private PlayerCharacterMasterController GetRandomDeadCharacter()
         {
             List<PlayerCharacterMasterController> deadCharacterList = new List<PlayerCharacterMasterController>();
-            foreach (PlayerCharacterMasterController enumerator in PlayerCharacterMasterController.instances)
+            foreach (NetworkUser enumerator in isDead)
             {
-                if (enumerator.isConnected)
+                if (enumerator.master.playerCharacterMasterController.isConnected)
                 {
-                    if (enumerator.master.IsDeadAndOutOfLivesServer())
+                    if (enumerator.master.IsDeadAndOutOfLivesServer() || enumerator.master.bodyPrefab != BodyCatalog.GetBodyPrefab(enumerator.NetworkbodyIndexPreference))
                     {
-                        deadCharacterList.Add(enumerator);
+                        deadCharacterList.Add(enumerator.master.playerCharacterMasterController);
                     }
                 }
             }
@@ -288,23 +324,53 @@ namespace ShrineOfDio
             int index = random.Next(deadCharacterList.Count);
 
             return deadCharacterList[index];
+
+
+            //List<PlayerCharacterMasterController> deadCharacterList = new List<PlayerCharacterMasterController>();
+            //foreach (PlayerCharacterMasterController enumerator in PlayerCharacterMasterController.instances)
+            //{
+            //    if (enumerator.isConnected)
+            //    {
+            //        if (enumerator.master.IsDeadAndOutOfLivesServer() || enumerator.master.bodyPrefab != BodyCatalog.GetBodyPrefab(enumerator.networkUser.NetworkbodyIndexPreference))
+            //        {
+            //            deadCharacterList.Add(enumerator);
+            //        }
+            //    }
+            //}
+            //Random random = new Random();
+            //int index = random.Next(deadCharacterList.Count);
+
+            //return deadCharacterList[index];
         }
 
         private bool IsAnyoneDead()
         {
-            foreach (PlayerCharacterMasterController enumerator in PlayerCharacterMasterController.instances)
+            foreach (NetworkUser enumerator in isDead)
             {
-                //if (!enumerator.master.GetBody().healthComponent.alive)
-                if (enumerator.isConnected)
+                if (enumerator.master.playerCharacterMasterController.isConnected)
                 {
-                    if (!enumerator.master.GetBody() || !enumerator.master.GetBody().healthComponent.alive)
+                    if (!enumerator.master.GetBody() || !enumerator.master.GetBody().healthComponent.alive || enumerator.master.bodyPrefab != BodyCatalog.GetBodyPrefab(enumerator.NetworkbodyIndexPreference))
                     {
-                        //if(enumerator.master.networkIdentity.connectionToClient.isConnected)
                         return true;
                     }
                 }
             }
+
             return false;
+
+            //foreach (PlayerCharacterMasterController enumerator in PlayerCharacterMasterController.instances)
+            //{
+            //    //if (!enumerator.master.GetBody().healthComponent.alive)
+            //    if (enumerator.isConnected)
+            //    {
+            //        if (!enumerator.master.GetBody() || !enumerator.master.GetBody().healthComponent.alive || enumerator.master.bodyPrefab != BodyCatalog.GetBodyPrefab(enumerator.networkUser.NetworkbodyIndexPreference))
+            //        {
+            //            //if(enumerator.master.networkIdentity.connectionToClient.isConnected)
+            //            return true;
+            //        }
+            //    }
+            //}
+            //return false;
         }
 
         public void SpawnShrineOfDio(SceneDirector self)
@@ -313,15 +379,15 @@ namespace ShrineOfDio
             if (SceneInfo.instance.countsAsStage)
             {
                 SpawnCard card = Resources.Load<SpawnCard>("SpawnCards/InteractableSpawnCard/iscShrineHealing");
-                GameObject gameObject3 = DirectorCore.instance.TrySpawnObject( new DirectorSpawnRequest(card, new DirectorPlacementRule
+                GameObject gameObject3 = DirectorCore.instance.TrySpawnObject(new DirectorSpawnRequest(card, new DirectorPlacementRule
                 {
                     placementMode = DirectorPlacementRule.PlacementMode.Random
                 }, xoroshiro128Plus));
 
-                if(!UseBalancedMode.Value)
+                if (!UseBalancedMode.Value)
                 {
                     gameObject3.GetComponent<PurchaseInteraction>().Networkcost = GetDifficultyScaledCost(ResurrectionCost.Value);
-                } 
+                }
             }
         }
 
