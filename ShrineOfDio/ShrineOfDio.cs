@@ -14,7 +14,7 @@ using RoR2.Networking;
 namespace ShrineOfDio
 {
     [BepInDependency("com.bepis.r2api")]
-    [BepInPlugin("com.MagnusMagnuson.ShrineOfDio", "ShrineOfDio", "1.3.4")]
+    [BepInPlugin("com.MagnusMagnuson.ShrineOfDio", "ShrineOfDio", "1.3.5")]
     [NetworkCompatibility(CompatibilityLevel.NoNeedForSync, VersionStrictness.DifferentModVersionsAreOk)]
     public class ShrineOfDio : BaseUnityPlugin
     {
