@@ -16,7 +16,8 @@ using Random = System.Random;
 namespace TemporaryLunarCoins
 {
     [BepInDependency("com.bepis.r2api")]
-    [BepInPlugin("com.MagnusMagnuson.TemporaryLunarCoins", "TemporaryLunarCoins", "0.2.1")]
+    [NetworkCompatibility(CompatibilityLevel.NoNeedForSync, VersionStrictness.DifferentModVersionsAreOk)]
+    [BepInPlugin("com.MagnusMagnuson.TemporaryLunarCoins", "TemporaryLunarCoins", "0.2.2")]
     public class TemporaryLunarCoins : BaseUnityPlugin
     {
         bool AllAgree = false;
@@ -40,10 +41,10 @@ namespace TemporaryLunarCoins
         {
 
             ChangeDroprate = Config.Bind("", "ChangeDroprate", true, new ConfigDescription("If this is set to false, it will ignore the other values and use vanilla settings."));
-            DropChance = Config.Bind("", "DropChance", 1.5f, new ConfigDescription("The initial value to drop coins. Vanilla is 1 (percent)"));
-            DropMulti = Config.Bind("", "DropMulti", 0.5f, new ConfigDescription("The multiplier for which, after every lunar coin is dropped, modifies the current dropchance. Results in diminishing returns. Vanilla  is 0.5 (percent)."));
+            DropChance = Config.Bind("", "DropChance", 1.5f, new ConfigDescription("The initial chance to drop coins. Vanilla is 1 (percent)"));
+            DropMulti = Config.Bind("", "DropMulti", 0.5f, new ConfigDescription("The multiplier applied to the drop chance after a lunar coins has dropped. Results in diminishing returns if smaller than 1. Vanilla is 0.5 (halving chance every drop). Set to 1 if you want a consistent drop rate."));
             SkipOnSinglePlayer = Config.Bind("", "SkipOnSinglePlayer", false, new ConfigDescription("If this is set to true, Lunar Coins are automatically removed in single player."));
-
+            
             //RoR2.Run.onRunStartGlobal += Run_Start; //Apparently the proper way to do it, since the game natively has an event for it. But ProperSave is now il hooking TLC to deal with compatibility issues I believe, so just leaving as is, as ProperSave breaks otherwise.
             On.RoR2.Run.Start += Run_Start;
 
