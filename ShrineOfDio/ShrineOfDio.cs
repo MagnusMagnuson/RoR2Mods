@@ -14,7 +14,7 @@ using RoR2.Networking;
 namespace ShrineOfDio
 {
     [BepInDependency("com.bepis.r2api")]
-    [BepInPlugin("com.MagnusMagnuson.ShrineOfDio", "ShrineOfDio", "1.3.5")]
+    [BepInPlugin("com.MagnusMagnuson.ShrineOfDio", "ShrineOfDio", "1.4.0")]
     [NetworkCompatibility(CompatibilityLevel.NoNeedForSync, VersionStrictness.DifferentModVersionsAreOk)]
     public class ShrineOfDio : BaseUnityPlugin
     {
@@ -345,32 +345,30 @@ namespace ShrineOfDio
 
         private bool IsAnyoneDead()
         {
-            foreach (NetworkUser enumerator in isDead)
+
+            foreach (PlayerCharacterMasterController enumerator in PlayerCharacterMasterController.instances)
             {
-                if (enumerator.master.playerCharacterMasterController.isConnected)
+                //if (!enumerator.master.GetBody().healthComponent.alive)
+                if (enumerator.isConnected)
                 {
-                    if (!enumerator.master.GetBody() || !enumerator.master.GetBody().healthComponent.alive || enumerator.master.bodyPrefab != BodyCatalog.GetBodyPrefab(enumerator.NetworkbodyIndexPreference))
-                    {
-                        return true;
-                    }
+                    if (!enumerator.master.GetBody() || !enumerator.master.GetBody().healthComponent.alive || isNonSurvivor(enumerator))
+                        {
+                            return true;
+                        }
                 }
             }
-
             return false;
+        }
 
-            //foreach (PlayerCharacterMasterController enumerator in PlayerCharacterMasterController.instances)
-            //{
-            //    //if (!enumerator.master.GetBody().healthComponent.alive)
-            //    if (enumerator.isConnected)
-            //    {
-            //        if (!enumerator.master.GetBody() || !enumerator.master.GetBody().healthComponent.alive || enumerator.master.bodyPrefab != BodyCatalog.GetBodyPrefab(enumerator.networkUser.NetworkbodyIndexPreference))
-            //        {
-            //            //if(enumerator.master.networkIdentity.connectionToClient.isConnected)
-            //            return true;
-            //        }
-            //    }
-            //}
-            //return false;
+        private bool isNonSurvivor(PlayerCharacterMasterController enumerator)
+        {
+            if (enumerator.master.hasBody)
+            {
+                if (!enumerator.networkUser.GetCurrentBody().name.Split('(')[0].Equals(BodyCatalog.GetBodyPrefab(enumerator.networkUser.NetworkbodyIndexPreference).name)) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         public void SpawnShrineOfDio(SceneDirector self)
