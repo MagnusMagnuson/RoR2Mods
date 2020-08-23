@@ -45,6 +45,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BossShop", "BossShop\BossSh
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LocalConnect", "LocalConnect\LocalConnect.csproj", "{3E4106F3-2BDB-4B7A-8329-35BC07C8250E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ModSyncForcer", "ModSyncForcer\ModSyncForcer.csproj", "{67FD9018-CF98-48F7-9F30-D636CC4F63ED}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -130,6 +132,12 @@ Global
 		{3E4106F3-2BDB-4B7A-8329-35BC07C8250E}.DropInPlugins|Any CPU.Build.0 = Debug|Any CPU
 		{3E4106F3-2BDB-4B7A-8329-35BC07C8250E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3E4106F3-2BDB-4B7A-8329-35BC07C8250E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{67FD9018-CF98-48F7-9F30-D636CC4F63ED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{67FD9018-CF98-48F7-9F30-D636CC4F63ED}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{67FD9018-CF98-48F7-9F30-D636CC4F63ED}.DropInPlugins|Any CPU.ActiveCfg = Debug|Any CPU
+		{67FD9018-CF98-48F7-9F30-D636CC4F63ED}.DropInPlugins|Any CPU.Build.0 = Debug|Any CPU
+		{67FD9018-CF98-48F7-9F30-D636CC4F63ED}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{67FD9018-CF98-48F7-9F30-D636CC4F63ED}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
