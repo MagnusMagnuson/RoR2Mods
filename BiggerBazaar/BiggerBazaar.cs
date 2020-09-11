@@ -16,21 +16,22 @@ namespace BiggerBazaar
 {
     [BepInDependency("com.bepis.r2api")]
     [BepInDependency("com.funkfrog_sipondo.sharesuite", BepInDependency.DependencyFlags.SoftDependency)]
-    [BepInPlugin("com.MagnusMagnuson.BiggerBazaar", "BiggerBazaar", "1.9.4")]
+    [BepInPlugin("com.MagnusMagnuson.BiggerBazaar", "BiggerBazaar", "1.10.0")]
     [NetworkCompatibility(CompatibilityLevel.NoNeedForSync, VersionStrictness.DifferentModVersionsAreOk)]
     public class BiggerBazaar : BaseUnityPlugin
     {
 
         bool isCurrentStageBazaar = false;
 
-        //public static BaseUnityPlugin ShareSuite;
-        //ShareSuite
-
         private void Start()
         {
-            if (Chainloader.PluginInfos.ContainsKey("com.funkfrog_sipondo.sharesuite"))
+            foreach (var kvp in Chainloader.PluginInfos)
             {
-                ModConfig.SetShareSuiteReference(Chainloader.PluginInfos["com.funkfrog_sipondo.sharesuite"].Instance);
+                if (kvp.Key == "com.funkfrog_sipondo.sharesuite")
+                {
+                    ModConfig.SetShareSuiteReference(kvp.Value.Instance);
+                    break;
+                }
             }
         }
 
@@ -123,7 +124,7 @@ namespace BiggerBazaar
                     if (isCurrentStageBazaar)
                     {
                         bool isCreatingDroplet = false;
-                        if (!ModConfig.isUsingShareSuite)
+                        if (!ModConfig.isShareSuiteLoaded)
                         {
                             isCreatingDroplet = true;
                         }
@@ -183,6 +184,7 @@ namespace BiggerBazaar
                                     activator.GetComponent<CharacterBody>().master.money += ((uint)money);
                                 } else
                                 {
+                                    //ShareSuite.MoneySharingHooks.AddMoneyExternal(money);
                                     bazaar.ShareSuiteMoneyFix(activator, money);
                                 }
                                 //activator.GetComponent<CharacterBody>().master.money += ((uint)money);
@@ -227,14 +229,21 @@ namespace BiggerBazaar
                             if (!bazaar.PlayerHasTierPurchasesLeft(tier, bazaarPlayer)) {
                                 return;
                             }
-                            bazaarPlayer.chestPurchases++;
+                            if(ModConfig.ShareSuite != null && ModConfig.ShareSuiteTotalPurchaseSharing.Value)
+                            {
+                                bazaar.GetBazaarPlayers().ForEach(x => x.chestPurchases++);
+                            } else
+                            {
+                                bazaarPlayer.chestPurchases++;
+                            }
+                            
                             bazaarPlayer.IncreaseTierPurchase(tier);
                             bazaarChestIndex = i;
                             break;
                         }
                     }
                     // Special case for ShareSuite
-                    if (ModConfig.isUsingShareSuite && !ModConfig.ShareSuiteItemSharingEnabled.Value)
+                    if (ModConfig.isShareSuiteActive() && !ModConfig.ShareSuiteItemSharingEnabled.Value)
                     {
                         if(bazaarChestIndex != -1) 
                         {
@@ -249,10 +258,11 @@ namespace BiggerBazaar
                             {
                                 if (!ModConfig.IsShareSuiteMoneySharing())
                                 {
-                                    master.GiveMoney((uint)-self.cost);
+                                    master.money -= (uint)self.cost;
                                 }
                                 else
                                 {
+                                    //ShareSuite.MoneySharingHooks.AddMoneyExternal(-self.cost);
                                     bazaar.ShareSuiteMoneyFix(activator, -self.cost);
                                 }
                             }
@@ -349,15 +359,18 @@ namespace BiggerBazaar
                 return orig(self, writer, forceAll);
             };
 
-            On.RoR2.BazaarController.Start += (orig, self) =>
-            //On.RoR2.SceneDirector.Start += (orig, self) =>
+            //On.RoR2.BazaarController.Start += (orig, self) =>
+            On.RoR2.SceneDirector.Start += (orig, self) =>
             {
+                
                 if (NetworkServer.active)
                 {
                     if (SceneManager.GetActiveScene().name.Contains("bazaar"))
                     {
+                        Debug.LogWarning("Hello, log inspector. Hooking SceneDirector.Start in the Bazaar always throws an exception, no matter what you do. Luckily, it doesn't affect anything and it's unlikely that any of the mods mentioned here are the reason you are checking the log.");
                         var sacrificeArtifactDef = ArtifactCatalog.FindArtifactDef("Sacrifice");
                         bool isUsingSacrificeArtifact = false;
+
                         if (RunArtifactManager.instance.IsArtifactEnabled(sacrificeArtifactDef)) {
                             if(!ModConfig.sacrificeArtifactAllowChests.Value)
                             {
@@ -440,7 +453,15 @@ namespace BiggerBazaar
             if (ModConfig.maxPlayerPurchases.Value != -1)
             {
                 totalSetting = true;
-                bazaarSettings += "\nYou can buy a total of " + ModConfig.maxPlayerPurchases.Value + " items.";
+                if(ModConfig.ShareSuite != null && ModConfig.ShareSuiteTotalPurchaseSharing.Value)
+                {
+                    bazaarSettings += "\nYour party can buy a total of " + ModConfig.maxPlayerPurchases.Value + " items.";
+                }
+                else
+                {
+                    bazaarSettings += "\nYou can buy a total of " + ModConfig.maxPlayerPurchases.Value + " items.";
+                }
+                
             }
             bool tierSettings = false;
             string tierString = "";

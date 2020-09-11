@@ -17,6 +17,9 @@ namespace BiggerBazaar
         public static ConfigEntry<float> tier1Rarity;
         public static ConfigEntry<float> tier2Rarity;
         public static ConfigEntry<float> tier3Rarity;
+        //public static ConfigEntry<float> tierBossRarity;
+        //public static ConfigEntry<float> tierLunarRarity;
+        //public static ConfigEntry<float> tierEquipmentRarity;
         public static ConfigEntry<int> maxChestPurchasesTier1;
         public static ConfigEntry<int> maxChestPurchasesTier2;
         public static ConfigEntry<int> maxChestPurchasesTier3;
@@ -26,18 +29,22 @@ namespace BiggerBazaar
         public static ConfigEntry<int> maxPlayerPurchasesTier3;
         public static ConfigEntry<bool> BroadcastShopSettings;
         public static ConfigEntry<bool> ShareSuiteItemSharingEnabled;
+        public static ConfigEntry<bool> ShareSuiteTotalPurchaseSharing;
         public static ConfigEntry<bool> sacrificeArtifactAllowChests;
         //public static ConfigEntry<bool> ShareSuiteMoneySharingEnabled;
         public static bool infiniteLunarExchanges = false;
-        public static bool isUsingShareSuite;
+        public static bool isShareSuiteLoaded;
         //private static BaseUnityPlugin ShareSuite = null;
-        public static ConfigEntry<bool> experimentalPriceScaling;
-        public static ConfigEntry<float> experimentalPriceScalingMinPercent;
-        public static ConfigEntry<float> experimentalPriceScalingMaxPercent;
+        //public static ConfigEntry<bool> experimentalPriceScaling;
+        //public static ConfigEntry<float> experimentalPriceScalingMinPercent;
+        //public static ConfigEntry<float> experimentalPriceScalingMaxPercent;
 
         public static ConfigEntry<int> tier1CostLunar;
         public static ConfigEntry<int> tier2CostLunar;
         public static ConfigEntry<int> tier3CostLunar;
+        //public static ConfigEntry<int> tierBossCostLunar;
+        //public static ConfigEntry<int> tierLunarCostLunar;
+        //public static ConfigEntry<int> tierEquipmentCostLunar;
 
         public static BaseUnityPlugin ShareSuite;
 
@@ -97,6 +104,27 @@ namespace BiggerBazaar
             new ConfigDescription("")
             );
             //tier3Rarity = tier3RarityConf.Value;
+
+            //tierBossRarity = config.Bind(
+            //"Config",
+            //"tierBossRarity",
+            //0f,
+            //new ConfigDescription("")
+            //);
+
+            //tierLunarRarity = config.Bind(
+            //"Config",
+            //"tierLunarRarity",
+            //0f,
+            //new ConfigDescription("")
+            //);
+
+            //tierEquipmentRarity = config.Bind(
+            //"Config",
+            //"tierEquipmentRarity",
+            //0f,
+            //new ConfigDescription("")
+            //);
 
             maxChestPurchasesTier1 = config.Bind(
             "Config",
@@ -193,26 +221,47 @@ namespace BiggerBazaar
             new ConfigDescription("Sets how many lunar coins a tier 3 (red) item costs")
             );
 
-            experimentalPriceScaling = config.Bind(
-            "PriceScaling",
-            "experimentalPriceScaling",
-            false,
-            new ConfigDescription("Experimental scaling for chest prices. This prevents that the player(s) can buy all items, by recalculating chest prices if players money together exceeds a certain percentage of the shops worth. The adjustment is random within certain bounds (e.g. the players money together allows for theoretically 30% of the shops worth to be bought). The players' individual money remains unchanged.")
-            );
+            //tierBossCostLunar = config.Bind(
+            //"LunarModePricing",
+            //"tierBossCostLunar",
+            //5,
+            //new ConfigDescription("Sets how many lunar coins a boss (yellow) item costs")
+            //);
 
-            experimentalPriceScalingMinPercent = config.Bind(
-            "PriceScaling",
-            "experimentalPriceScalingMinPercent",
-            0.3f,
-            new ConfigDescription("Lower random bound for shops inventory worth able to be bought. Numbers should be between 0 (for 0%) and 1 (for 100%). \nA value of 0.3 means that the most expensive the shop can become is that all of the players' money together is only enough to buy 30% of the shop's inventory.")
-            );
+            //tierLunarCostLunar = config.Bind(
+            //"LunarModePricing",
+            //"tierLunarCostLunar",
+            //3,
+            //new ConfigDescription("Sets how many lunar coins a lunar (blue) item costs")
+            //);
 
-            experimentalPriceScalingMaxPercent = config.Bind(
-            "PriceScaling",
-            "experimentalPriceScalingMaxPercent",
-            0.7f,
-            new ConfigDescription("Upper random bound for shops inventory worth able to be bought and also value at which a recalculation happens. Numbers should be between 0 (for 0%) and 1 (for 100%). \nA value of 0.7 means that the cheapest the shop can become is that all of the players' money together is enough to buy 70% of the shop's inventory.")
-            );
+            //tierEquipmentCostLunar = config.Bind(
+            //"LunarModePricing",
+            //"tierEquipmentCostLunar",
+            //3,
+            //new ConfigDescription("Sets how many lunar coins equipment (orange) costs")
+            //);
+
+            //experimentalPriceScaling = config.Bind(
+            //"PriceScaling",
+            //"experimentalPriceScaling",
+            //false,
+            //new ConfigDescription("Experimental scaling for chest prices. This prevents that the player(s) can buy all items, by recalculating chest prices if players money together exceeds a certain percentage of the shops worth. The adjustment is random within certain bounds (e.g. the players money together allows for theoretically 30% of the shops worth to be bought). The players' individual money remains unchanged.")
+            //);
+
+            //experimentalPriceScalingMinPercent = config.Bind(
+            //"PriceScaling",
+            //"experimentalPriceScalingMinPercent",
+            //0.3f,
+            //new ConfigDescription("Lower random bound for shops inventory worth able to be bought. Numbers should be between 0 (for 0%) and 1 (for 100%). \nA value of 0.3 means that the most expensive the shop can become is that all of the players' money together is only enough to buy 30% of the shop's inventory.")
+            //);
+
+            //experimentalPriceScalingMaxPercent = config.Bind(
+            //"PriceScaling",
+            //"experimentalPriceScalingMaxPercent",
+            //0.7f,
+            //new ConfigDescription("Upper random bound for shops inventory worth able to be bought and also value at which a recalculation happens. Numbers should be between 0 (for 0%) and 1 (for 100%). \nA value of 0.7 means that the cheapest the shop can become is that all of the players' money together is enough to buy 70% of the shop's inventory.")
+            //);
 
             ShareSuiteItemSharingEnabled = config.Bind(
             "ShareSuite",
@@ -221,7 +270,14 @@ namespace BiggerBazaar
             new ConfigDescription("This option is only relevant if you are using ShareSuite, otherwise ignore. \nSetting this to false, will disable item sharing for Bigger Bazaar items and put items directly into the buyers inventory, instead of having it pop out from the chest and drop on the floor and effectively sharing it with everyone on pickup.\nAutomatically turned on if money sharing is enabled in ShareSuite")
             );
 
-            isUsingShareSuite = IsShareSuiteLoaded();
+            ShareSuiteTotalPurchaseSharing = config.Bind(
+            "ShareSuite",
+            "ShareSuiteTotalPurchaseSharing",
+            true,
+            new ConfigDescription("This option is only relevant if you are using ShareSuite, otherwise ignore. \nSets the total amount of available purchases (maxPlayerPurchases in this config) to count for the whole party, rather than individual players.\nThis makes sense if you're sharing money and items.")
+            );
+
+            isShareSuiteLoaded = IsShareSuiteLoaded();
 
             sacrificeArtifactAllowChests = config.Bind(
             "Sacrifice Artifact",
@@ -230,6 +286,16 @@ namespace BiggerBazaar
             new ConfigDescription("Prevents the Sacrifice Artifact from removing the chests in the bazaar.")
             );
 
+            //experimentalPriceScaling.Value = false;
+        }
+
+        internal static bool isShareSuiteActive()
+        {
+            if(isShareSuiteLoaded)
+            {
+                return ShareSuite.GetFieldValue<ConfigEntry<bool>>("ModIsEnabled").Value;
+            }
+            return false;
         }
 
         private static bool IsShareSuiteLoaded()
@@ -260,6 +326,8 @@ namespace BiggerBazaar
             bool sharing = false;
             if (ShareSuite != null)
             {
+                if (isShareSuiteActive())
+                    return false;
                 sharing = ShareSuite.GetFieldValue<ConfigEntry<bool>>("MoneyIsShared").Value;
                 if (sharing)
                 {
