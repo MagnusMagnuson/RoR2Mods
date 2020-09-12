@@ -16,7 +16,7 @@ namespace BiggerBazaar
 {
     [BepInDependency("com.bepis.r2api")]
     [BepInDependency("com.funkfrog_sipondo.sharesuite", BepInDependency.DependencyFlags.SoftDependency)]
-    [BepInPlugin("com.MagnusMagnuson.BiggerBazaar", "BiggerBazaar", "1.10.0")]
+    [BepInPlugin("com.MagnusMagnuson.BiggerBazaar", "BiggerBazaar", "1.10.2")]
     [NetworkCompatibility(CompatibilityLevel.NoNeedForSync, VersionStrictness.DifferentModVersionsAreOk)]
     public class BiggerBazaar : BaseUnityPlugin
     {
@@ -424,79 +424,90 @@ namespace BiggerBazaar
         {
             yield return new WaitForSeconds(2);
 
-            string bazaarSettings = "";
-            bool stockSetting = false;
-            string stockString = "";
-            if(ModConfig.maxChestPurchasesTier1.Value != -1)
-            {
-                stockSetting = true;
-                stockString += "<color=#FFFFFF>Tier1: " + ModConfig.maxChestPurchasesTier1.Value + "</color>";
-            }
-            if (ModConfig.maxChestPurchasesTier2.Value != -1)
-            {
-                if (stockSetting) stockString += ", ";
-                stockSetting = true;
-                stockString += "<color=#08EB00>Tier2: " + ModConfig.maxChestPurchasesTier2.Value + "</color>";
-            }
-            if (ModConfig.maxChestPurchasesTier3.Value != -1)
-            {
-                if (stockSetting) stockString += ", ";
-                stockSetting = true;
-                stockString += "<color=#FF0000>Tier3: " + ModConfig.maxChestPurchasesTier3.Value + "</color>";
-            }
-            if (stockSetting)
-            {
-                bazaarSettings += "\nBazaar stock:: " + stockString + " item(s) per chest.";
-            }
-
-            bool totalSetting = false;
-            if (ModConfig.maxPlayerPurchases.Value != -1)
-            {
-                totalSetting = true;
-                if(ModConfig.ShareSuite != null && ModConfig.ShareSuiteTotalPurchaseSharing.Value)
-                {
-                    bazaarSettings += "\nYour party can buy a total of " + ModConfig.maxPlayerPurchases.Value + " items.";
-                }
-                else
-                {
-                    bazaarSettings += "\nYou can buy a total of " + ModConfig.maxPlayerPurchases.Value + " items.";
-                }
-                
-            }
-            bool tierSettings = false;
-            string tierString = "";
-            if (ModConfig.maxPlayerPurchasesTier1.Value > 0)
-            {
-                tierSettings = true;
-                tierString += "<color=#FFFFFF>" + ModConfig.maxPlayerPurchasesTier1.Value + " Tier1</color>";
-            }
-            if (ModConfig.maxPlayerPurchasesTier2.Value > 0)
-            {
-                if (tierSettings) tierString += ", ";
-                tierSettings = true;
-                tierString += "<color=#08EB00>" + ModConfig.maxPlayerPurchasesTier2.Value + " Tier2</color>";
-            }
-            if (ModConfig.maxPlayerPurchasesTier3.Value > 0)
-            {
-                if (tierSettings) tierString += ", ";
-                tierSettings = true;
-                tierString += "<color=#FF0000>" + ModConfig.maxPlayerPurchasesTier3.Value + " Tier3</color>";
-            }
-            if (tierSettings)
-            {
-                tierString = "\nYou can only buy up to " + tierString + " items.";
-                bazaarSettings += tierString;
-            }
-            bazaarSettings = "--Bazaar Restrictions--<color=#BCBCBC><size=16px>" + bazaarSettings + "</size></color>";
-
-            if(totalSetting || tierSettings || stockSetting)
+            if (!Bazaar.AreAnyItemsAvailable())
             {
                 Chat.SendBroadcastChat(new Chat.SimpleChatMessage
                 {
-                    baseToken = bazaarSettings
+                    baseToken = "No items available to spawn for Bigger Bazaar"
                 });
+                ;
             }
-            
+            else
+            {
+
+                string bazaarSettings = "";
+                bool stockSetting = false;
+                string stockString = "";
+                if (ModConfig.maxChestPurchasesTier1.Value != -1)
+                {
+                    stockSetting = true;
+                    stockString += "<color=#FFFFFF>Tier1: " + ModConfig.maxChestPurchasesTier1.Value + "</color>";
+                }
+                if (ModConfig.maxChestPurchasesTier2.Value != -1)
+                {
+                    if (stockSetting) stockString += ", ";
+                    stockSetting = true;
+                    stockString += "<color=#08EB00>Tier2: " + ModConfig.maxChestPurchasesTier2.Value + "</color>";
+                }
+                if (ModConfig.maxChestPurchasesTier3.Value != -1)
+                {
+                    if (stockSetting) stockString += ", ";
+                    stockSetting = true;
+                    stockString += "<color=#FF0000>Tier3: " + ModConfig.maxChestPurchasesTier3.Value + "</color>";
+                }
+                if (stockSetting)
+                {
+                    bazaarSettings += "\nBazaar stock:: " + stockString + " item(s) per chest.";
+                }
+
+                bool totalSetting = false;
+                if (ModConfig.maxPlayerPurchases.Value != -1)
+                {
+                    totalSetting = true;
+                    if (ModConfig.ShareSuite != null && ModConfig.ShareSuiteTotalPurchaseSharing.Value)
+                    {
+                        bazaarSettings += "\nYour party can buy a total of " + ModConfig.maxPlayerPurchases.Value + " items.";
+                    }
+                    else
+                    {
+                        bazaarSettings += "\nYou can buy a total of " + ModConfig.maxPlayerPurchases.Value + " items.";
+                    }
+
+                }
+                bool tierSettings = false;
+                string tierString = "";
+                if (ModConfig.maxPlayerPurchasesTier1.Value > 0)
+                {
+                    tierSettings = true;
+                    tierString += "<color=#FFFFFF>" + ModConfig.maxPlayerPurchasesTier1.Value + " Tier1</color>";
+                }
+                if (ModConfig.maxPlayerPurchasesTier2.Value > 0)
+                {
+                    if (tierSettings) tierString += ", ";
+                    tierSettings = true;
+                    tierString += "<color=#08EB00>" + ModConfig.maxPlayerPurchasesTier2.Value + " Tier2</color>";
+                }
+                if (ModConfig.maxPlayerPurchasesTier3.Value > 0)
+                {
+                    if (tierSettings) tierString += ", ";
+                    tierSettings = true;
+                    tierString += "<color=#FF0000>" + ModConfig.maxPlayerPurchasesTier3.Value + " Tier3</color>";
+                }
+                if (tierSettings)
+                {
+                    tierString = "\nYou can only buy up to " + tierString + " items.";
+                    bazaarSettings += tierString;
+                }
+                bazaarSettings = "--Bazaar Restrictions--<color=#BCBCBC><size=16px>" + bazaarSettings + "</size></color>";
+
+                if (totalSetting || tierSettings || stockSetting)
+                {
+                    Chat.SendBroadcastChat(new Chat.SimpleChatMessage
+                    {
+                        baseToken = bazaarSettings
+                    });
+                }
+            }
         }
 
     }

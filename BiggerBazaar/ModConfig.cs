@@ -326,8 +326,9 @@ namespace BiggerBazaar
             bool sharing = false;
             if (ShareSuite != null)
             {
-                if (isShareSuiteActive())
+                if (!isShareSuiteActive())
                     return false;
+
                 sharing = ShareSuite.GetFieldValue<ConfigEntry<bool>>("MoneyIsShared").Value;
                 if (sharing)
                 {

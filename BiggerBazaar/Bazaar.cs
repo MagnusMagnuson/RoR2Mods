@@ -487,98 +487,110 @@ namespace BiggerBazaar
             {
                 playerMoney += bazaarPlayers[i].money;
             }
-
-            if (ModConfig.chestCostType.Value == 1) {
-                for (int i = 0; i < bazaarItemTiers.Count; i++)
+            if (AreAnyItemsAvailable())
+            {
+                if (ModConfig.chestCostType.Value == 1)
                 {
-                    int chestLunarCost;
-                    if(bazaarItemTiers[i] == ItemTier.Tier1)
+                    for (int i = 0; i < bazaarItemTiers.Count; i++)
                     {
-                        chestLunarCost = ModConfig.tier1CostLunar.Value;
-                    } else if(bazaarItemTiers[i] == ItemTier.Tier2)
-                    {
-                        chestLunarCost = ModConfig.tier2CostLunar.Value;
-                    }
-                    else
-                    //if (bazaarItemTiers[i] == ItemTier.Tier3)
-                    {
-                        chestLunarCost = ModConfig.tier3CostLunar.Value;
-                    }
-                    //else if (bazaarItemTiers[i] == ItemTier.Boss)
-                    //{
-                    //    chestLunarCost = ModConfig.tierBossCostLunar.Value;
-                    //} else
-                    //{
-                    //    chestLunarCost = ModConfig.tierLunarCostLunar.Value;
-                    //}
+                        int chestLunarCost;
+                        if (bazaarItemTiers[i] == ItemTier.Tier1)
+                        {
+                            chestLunarCost = ModConfig.tier1CostLunar.Value;
+                        }
+                        else if (bazaarItemTiers[i] == ItemTier.Tier2)
+                        {
+                            chestLunarCost = ModConfig.tier2CostLunar.Value;
+                        }
+                        else
+                        //if (bazaarItemTiers[i] == ItemTier.Tier3)
+                        {
+                            chestLunarCost = ModConfig.tier3CostLunar.Value;
+                        }
+                        //else if (bazaarItemTiers[i] == ItemTier.Boss)
+                        //{
+                        //    chestLunarCost = ModConfig.tierBossCostLunar.Value;
+                        //} else
+                        //{
+                        //    chestLunarCost = ModConfig.tierLunarCostLunar.Value;
+                        //}
                         SpawnBazaarItemAt(bazaarItemPositions[i], bazaarItemRotations[i], bazaarItemTiers[i], chestLunarCost);
+                    }
+                    //}
+                    // experimental price scaling
+                    //else if (ModConfig.experimentalPriceScaling.Value && DoPlayersHaveTooMuchMoney(playerMoney, bazaarItemTiers))
+                    //{
+                    //    isUsingexperimentalScaling = true;
+                    //    uint unscaledPlayerMoney = GetDifficultyUnscaledCost(playerMoney);
+                    //    float chestUnits = 0f;
+
+                    //    for (int i = 0; i < bazaarItemTiers.Count; i++)
+                    //    {
+                    //        if (bazaarItemTiers[i] == ItemTier.Tier1)
+                    //        {
+                    //            chestUnits += 1f * ModConfig.maxChestPurchasesTier1.Value;
+                    //        }
+                    //        else if (bazaarItemTiers[i] == ItemTier.Tier2)
+                    //        {
+                    //            chestUnits += tierRatio[bazaarItemTiers[i]] * ModConfig.maxChestPurchasesTier2.Value;
+                    //        }
+                    //        else if (bazaarItemTiers[i] == ItemTier.Tier3)
+                    //        {
+                    //            chestUnits += tierRatio[bazaarItemTiers[i]] * ModConfig.maxChestPurchasesTier3.Value;
+                    //        }
+                    //    }
+
+                    //    int tier1BaseCost = (int)(unscaledPlayerMoney / chestUnits);
+                    //    double randomMult = r.NextDouble() * (ModConfig.experimentalPriceScalingMaxPercent.Value - ModConfig.experimentalPriceScalingMinPercent.Value) + ModConfig.experimentalPriceScalingMinPercent.Value;
+                    //    for (int i = 0; i < bazaarItemTiers.Count; i++)
+                    //    {
+                    //        tierRatio.TryGetValue(bazaarItemTiers[i], out float val);
+                    //        int scaledCost = (int)(tier1BaseCost * ((1f / randomMult) * val));
+                    //        //Debug.Log("Tier " + bazaarItemTiers[i] + ": " + scaledCost);
+                    //        SpawnBazaarItemAt(bazaarItemPositions[i], bazaarItemRotations[i], bazaarItemTiers[i], scaledCost);
+                    //    }
+                    //    priceScaledLunarPodBaseCost = (int)(tier1BaseCost * ((1f / randomMult) * tierRatio[ItemTier.Tier2]));
+
                 }
-            //}
-            // experimental price scaling
-            //else if (ModConfig.experimentalPriceScaling.Value && DoPlayersHaveTooMuchMoney(playerMoney, bazaarItemTiers))
-            //{
-            //    isUsingexperimentalScaling = true;
-            //    uint unscaledPlayerMoney = GetDifficultyUnscaledCost(playerMoney);
-            //    float chestUnits = 0f;
-
-            //    for (int i = 0; i < bazaarItemTiers.Count; i++)
-            //    {
-            //        if (bazaarItemTiers[i] == ItemTier.Tier1)
-            //        {
-            //            chestUnits += 1f * ModConfig.maxChestPurchasesTier1.Value;
-            //        }
-            //        else if (bazaarItemTiers[i] == ItemTier.Tier2)
-            //        {
-            //            chestUnits += tierRatio[bazaarItemTiers[i]] * ModConfig.maxChestPurchasesTier2.Value;
-            //        }
-            //        else if (bazaarItemTiers[i] == ItemTier.Tier3)
-            //        {
-            //            chestUnits += tierRatio[bazaarItemTiers[i]] * ModConfig.maxChestPurchasesTier3.Value;
-            //        }
-            //    }
-
-            //    int tier1BaseCost = (int)(unscaledPlayerMoney / chestUnits);
-            //    double randomMult = r.NextDouble() * (ModConfig.experimentalPriceScalingMaxPercent.Value - ModConfig.experimentalPriceScalingMinPercent.Value) + ModConfig.experimentalPriceScalingMinPercent.Value;
-            //    for (int i = 0; i < bazaarItemTiers.Count; i++)
-            //    {
-            //        tierRatio.TryGetValue(bazaarItemTiers[i], out float val);
-            //        int scaledCost = (int)(tier1BaseCost * ((1f / randomMult) * val));
-            //        //Debug.Log("Tier " + bazaarItemTiers[i] + ": " + scaledCost);
-            //        SpawnBazaarItemAt(bazaarItemPositions[i], bazaarItemRotations[i], bazaarItemTiers[i], scaledCost);
-            //    }
-            //    priceScaledLunarPodBaseCost = (int)(tier1BaseCost * ((1f / randomMult) * tierRatio[ItemTier.Tier2]));
-
-            } else 
-            // regular price
-            {
-
-                for (int i = 0; i < bazaarItemTiers.Count; i++)
+                else
+                // regular price
                 {
-                    SpawnBazaarItemAt(bazaarItemPositions[i], bazaarItemRotations[i], bazaarItemTiers[i], -1);
+
+                    for (int i = 0; i < bazaarItemTiers.Count; i++)
+                    {
+                        SpawnBazaarItemAt(bazaarItemPositions[i], bazaarItemRotations[i], bazaarItemTiers[i], -1);
+                    }
+
                 }
 
-            }
+                if (ModConfig.maxLunarExchanges.Value != 0)
+                    SpawnMoneyLunarPod(moneyPodPosition);
 
-            if (ModConfig.maxLunarExchanges.Value != 0) 
-                SpawnMoneyLunarPod(moneyPodPosition);
-
-            if(ModConfig.isShareSuiteLoaded)
-            {
-                // if money sharing spawn a barrel interaction that handles giving money because of the ShareSuite money sharing issue
-                if(ModConfig.IsShareSuiteMoneySharing())
+                if (ModConfig.isShareSuiteLoaded)
                 {
-                    SpawnCard barrelCard = Resources.Load<SpawnCard>("SpawnCards/InteractableSpawnCard/iscBarrel1");
-                    Vector3 barrelPosition = new Vector3(200f, 200f, 200f);
-                    DirectorPlacementRule placementRule = new DirectorPlacementRule();
-                    placementRule.placementMode = DirectorPlacementRule.PlacementMode.Direct;
-                    GameObject barrelGameObject = barrelCard.DoSpawn(barrelPosition, Quaternion.identity, new DirectorSpawnRequest(barrelCard, placementRule, Run.instance.runRNG)).spawnedInstance;
-                    barrelInteraction = barrelGameObject.GetComponent<BarrelInteraction>();
+                    // if money sharing spawn a barrel interaction that handles giving money because of the ShareSuite money sharing issue
+                    if (ModConfig.IsShareSuiteMoneySharing())
+                    {
+                        SpawnCard barrelCard = Resources.Load<SpawnCard>("SpawnCards/InteractableSpawnCard/iscBarrel1");
+                        Vector3 barrelPosition = new Vector3(200f, 200f, 200f);
+                        DirectorPlacementRule placementRule = new DirectorPlacementRule();
+                        placementRule.placementMode = DirectorPlacementRule.PlacementMode.Direct;
+                        GameObject barrelGameObject = barrelCard.DoSpawn(barrelPosition, Quaternion.identity, new DirectorSpawnRequest(barrelCard, placementRule, Run.instance.runRNG)).spawnedInstance;
+                        barrelInteraction = barrelGameObject.GetComponent<BarrelInteraction>();
+                    }
                 }
             }
+            
+        }
+
+        public static bool AreAnyItemsAvailable()
+        {
+            return Run.instance.availableTier1DropList.Count + Run.instance.availableTier2DropList.Count + Run.instance.availableTier3DropList.Count != 0;
         }
 
         IEnumerator TriggerInteractorBarrelInteraction(CharacterMaster master, int money)
         {
+            Debug.LogWarning("in coroutine");
             yield return new WaitUntil(() => master.GetBody() != null);
             yield return new WaitUntil(() => master.GetBody().gameObject.GetComponentInChildren<Interactor>() != null);
             ShareSuiteMoneyFix(master.GetBody().gameObject.GetComponentInChildren<Interactor>(), money - Math.Abs((int)master.money));
@@ -586,7 +598,7 @@ namespace BiggerBazaar
 
         //IEnumerator DelayAddMonexExternal(CharacterMaster master, int money)
         //{
-        //    yield return new WaitUntil(() => master.GetBody() != null);
+        //    yield return new WaitUntil(() => master.GetBody() != null); 
         //    yield return new WaitUntil(() => master.GetBody().gameObject.GetComponentInChildren<Interactor>() != null);
         //    yield return new WaitForSeconds(3f);
         //    MoneySharingHooks.AddMoneyExternal(money);
