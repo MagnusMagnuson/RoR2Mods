@@ -37,24 +37,9 @@ namespace BiggerBazaar
             //tierRatio.Add(ItemTier.Tier3, (float)ModConfig.tier3Cost.Value / ModConfig.tier1Cost.Value);
         }
 
-        //private void SetTotalTierRarity()
-        //{
-        //    float total = 0;
-        //    if (ModConfig.tier1Rarity.Value > 0)
-        //        total += ModConfig.tier1Rarity.Value;
-        //    if (ModConfig.tier2Rarity.Value > 0)
-        //        total += ModConfig.tier2Rarity.Value;
-        //    if (ModConfig.tier3Rarity.Value > 0)
-        //        total += ModConfig.tier3Rarity.Value;
-
-        //    totalTierRarity = total;
-        //}
-
-
         // bazaar building
-        private void SpawnBazaarItemAt(Vector3 position, Vector3 rotation, ItemTier itemTier, int cost)
+        private void SpawnBazaarItemAt(Vector3 position, Vector3 rotation, PickupTier pickupTier, int cost)
         {
-
             // chest players interact with
             SpawnCard chestCard = Resources.Load<SpawnCard>("SpawnCards/InteractableSpawnCard/iscChest1");
             DirectorPlacementRule placementRule = new DirectorPlacementRule();
@@ -64,23 +49,25 @@ namespace BiggerBazaar
 
 
             ItemIndex rItem;
-            List<PickupIndex> availableItems = GetAvailableItems(itemTier);
-            if(availableItems.Count > 0)
-            {
+            PickupIndex rPickupIndex;
+            List<PickupIndex> availableItems = GetAvailableItems(pickupTier);
+            //if(availableItems.Count > 0)
+            //{
                 int rItemIndex = r.Next(availableItems.Count);
-                PickupIndex rPickupIndex = availableItems[rItemIndex];
-                rItem = PickupCatalog.GetPickupDef(rPickupIndex).itemIndex;
-            } else
-            {
-                List<ItemIndex> drops = ItemDropAPI.GetDefaultDropList(itemTier);
-                int rItemIndex = r.Next(drops.Count);
-                rItem = drops[rItemIndex];
-            }
+                rPickupIndex = availableItems[rItemIndex];
+                //rItem = PickupCatalog.GetPickupDef(rPickupIndex).itemIndex;
+            //}
+            //else
+            //{
+            //    List<ItemIndex> drops = ItemDropAPI.GetDefaultDropList(pickupTier);
+            //    int rItemIndex = r.Next(drops.Count);
+            //    rItem = drops[rItemIndex];
+            //}
 
 
             GameObject itemGameObject = UnityEngine.Object.Instantiate<GameObject>(Resources.Load<GameObject>("Prefabs/NetworkedObjects/GenericPickup"), position, Quaternion.identity);
             itemGameObject.GetComponent<GenericPickupController>().transform.Translate(-2f, 4f, -3f, Space.World);
-            itemGameObject.GetComponent<GenericPickupController>().NetworkpickupIndex = PickupCatalog.FindPickupIndex(rItem);
+            itemGameObject.GetComponent<GenericPickupController>().NetworkpickupIndex = rPickupIndex;
 
             displayItems.Add(itemGameObject);
             NetworkServer.Spawn(itemGameObject);
@@ -94,7 +81,7 @@ namespace BiggerBazaar
                 //chestPI.SetDirtyBit(12u);
             }
             else if(cost == -1) {
-                chestPI.Networkcost = GetDifficultyScaledCostFromItemTier(ItemCatalog.GetItemDef(rItem).tier);
+                chestPI.Networkcost = GetDifficultyScaledCostFromItemTier(pickupTier);
             } else
             {
                 chestPI.Networkcost = GetDifficultyScaledCost(cost);
@@ -105,27 +92,31 @@ namespace BiggerBazaar
             BazaarItem bazaarItem = new BazaarItem();
             bazaarItem.chestBehavior = chest.GetComponent<ChestBehavior>();
             bazaarItem.genericPickupController = itemGameObject.GetComponent<GenericPickupController>();
-            bazaarItem.pickupIndex = PickupCatalog.FindPickupIndex(rItem);
+            bazaarItem.pickupIndex = rPickupIndex;
             bazaarItem.purchaseCount = 0;
-            bazaarItem.maxPurchases = GetMaxPurchaseAmount(itemTier);
+            bazaarItem.maxPurchases = ModConfig.GetTierUnitConfig(pickupTier).maxChestPurchases;
 
             bazaarItems.Add(bazaarItem);
             itemGameObject.GetComponent<GenericPickupController>().pickupIndex = PickupIndex.none;
         }
 
-        private List<PickupIndex> GetAvailableItems(ItemTier itemTier)
+        private List<PickupIndex> GetAvailableItems(PickupTier pickupTier)
         {
-            switch (itemTier)
+            switch (pickupTier)
             {
-                case ItemTier.Tier1:
+                case PickupTier.Tier1:
                     return Run.instance.availableTier1DropList;
-                case ItemTier.Tier2:
+                case PickupTier.Tier2:
                     return Run.instance.availableTier2DropList;
-                case ItemTier.Tier3:
+                case PickupTier.Tier3:
                     return Run.instance.availableTier3DropList;
-                case ItemTier.Boss:
+                case PickupTier.Boss:
                     return Run.instance.availableBossDropList;
-                case ItemTier.Lunar:
+                case PickupTier.Lunar:
+                    return Run.instance.availableLunarDropList;
+                case PickupTier.Equipment:
+                    return Run.instance.availableEquipmentDropList;
+                case PickupTier.LunarEquipment:
                     return Run.instance.availableLunarEquipmentDropList;
                 default:
                     return null;
@@ -159,79 +150,30 @@ namespace BiggerBazaar
         }
 
         // select bazaar items
-        private List<ItemTier> PickRandomWeightedBazaarItemTiers(int bazaarItemAmount)
+        private List<PickupTier> PickRandomWeightedBazaarItemTiers(int bazaarItemAmount)
         {
-            float t1 = 0;
-            if (Run.instance.availableTier1DropList.Count != 0)
-                t1 = ModConfig.tier1Rarity.Value;
-            float t2 = 0;
-            if (Run.instance.availableTier2DropList.Count != 0)
-                t2 = ModConfig.tier2Rarity.Value;
-            float t3 = 0;
-            if (Run.instance.availableTier3DropList.Count != 0)
-                t3 = ModConfig.tier3Rarity.Value;
-            //float tB = 0;
-            //if (Run.instance.availableBossDropList.Count != 0)
-            //    tB = ModConfig.tierBossRarity.Value;
-            //float tL = 0;
-            //if (Run.instance.availableLunarDropList.Count != 0)
-            //    tL = ModConfig.tierLunarRarity.Value;
-            //float tE = 0;
-            //if (Run.instance.availableEquipmentDropList.Count != 0)
-            //    tE = ModConfig.tierEquipmentRarity.Value;
+            TierContainer tierContainer = new TierContainer();
+            List<PickupTier> pickupTiers = new List<PickupTier>();
 
-            float totalTierRarity = t1 + t2 + t3 ;
-            //Debug.Log("t1: " + t1 + " t2: " + t2 + " t3: " + t3);
-            //Debug.LogWarning("total: " + totalTierRarity);
-
-            if (totalTierRarity == 0)
-                return PickRandomBazaarItemTiers(bazaarItemAmount);
-            
-            t1 /= totalTierRarity;
-            t2 /= totalTierRarity;
-            t3 /= totalTierRarity;
-            //tB /= totalTierRarity;
-            //tL /= totalTierRarity;
-            //tE /= totalTierRarity;
-
-
-            List<ItemTier> itemTiers = new List<ItemTier>();
+            if (tierContainer.totalRarity == 0)
+                return null;
 
             for (int i = 0; i < bazaarItemAmount; i++)
             {
-                var next = r.NextDouble();
-                if (next <= t1)
+                var next = r.NextDouble() * tierContainer.totalRarity;
+                foreach(var t in tierContainer.tierUnits)
                 {
-                    itemTiers.Add(ItemTier.Tier1);
-                    continue;
+                    if (next <= t.rarity)
+                    {
+                        pickupTiers.Add(t.pickupTier);
+                        break;
+                    }
+                    next -= t.rarity;
                 }
-                else
-                if (next <= t1 + t2)
-                {
-                    itemTiers.Add(ItemTier.Tier2);
-                    continue;
-                }
-                else
-                //if (next <= t1 + t2 + t3)
-                {
-                    itemTiers.Add(ItemTier.Tier3);
-                    continue;
-                }
-                //else
-                //if (next <= t1 + t2 + t3 + tB)
-                //{
-                //    itemTiers.Add(ItemTier.Boss);
-                //    continue;
-                //}
-                //else
-                ////if (next <= t1 + t2 + t3 + tB + tL)
-                //{
-                //    itemTiers.Add(ItemTier.Lunar);
-                //    continue;
-                //}
+
             }
 
-            return itemTiers;
+            return pickupTiers;
         }
 
         internal void ShareSuiteMoneyFix(Interactor activator, int money)
@@ -241,65 +183,74 @@ namespace BiggerBazaar
             barrelInteraction.OnInteractionBegin(activator);
         }
 
-        private List<ItemTier> PickRandomBazaarItemTiers(int bazaarItemAmount)
-        {
-            List<ItemTier> itemTiers = new List<ItemTier>();
+        //private List<ItemTier> PickRandomBazaarItemTiers(int bazaarItemAmount)
+        //{
+        //    List<ItemTier> itemTiers = new List<ItemTier>();
 
-            for (int i = 0; i < bazaarItemAmount; i++)
-            {
-                int randomTierNumber = r.Next(3);
-                ItemTier itemTier = ItemTier.NoTier;
-                switch (randomTierNumber)
-                {
-                    case 0:
-                        itemTier = ItemTier.Tier1;
-                        break;
-                    case 1:
-                        itemTier = ItemTier.Tier2;
-                        break;
-                    case 2:
-                        itemTier = ItemTier.Tier3;
-                        break;
-                }
-                itemTiers.Add(itemTier);
-            }
+        //    for (int i = 0; i < bazaarItemAmount; i++)
+        //    {
+        //        int randomTierNumber = r.Next(3);
+        //        ItemTier itemTier = ItemTier.NoTier;
+        //        switch (randomTierNumber)
+        //        {
+        //            case 0:
+        //                itemTier = ItemTier.Tier1;
+        //                break;
+        //            case 1:
+        //                itemTier = ItemTier.Tier2;
+        //                break;
+        //            case 2:
+        //                itemTier = ItemTier.Tier3;
+        //                break;
+        //        }
+        //        itemTiers.Add(itemTier);
+        //    }
 
-            return itemTiers;
-        }
+        //    return itemTiers;
+        //}
 
         // scale item cost
-        private int GetDifficultyScaledCostFromItemTier(ItemTier itemTier)
+        private int GetDifficultyScaledCostFromItemTier(PickupTier pickupTier)
         {
-            int baseCost = 0;
-            switch (itemTier)
-            {
-                case ItemTier.Tier1:
-                    baseCost = ModConfig.tier1Cost.Value;
-                    break;
-                case ItemTier.Tier2:
-                    baseCost = ModConfig.tier2Cost.Value;
-                    break;
-                case ItemTier.Tier3:
-                    baseCost = ModConfig.tier3Cost.Value;
-                    break;
-            }
-
+            int baseCost = ModConfig.GetTierUnitConfig(pickupTier).cost;
             return (int)((double)baseCost * (double)Mathf.Pow(CurrentDifficultyCoefficient, 1.25f));
         }
 
-        internal bool PlayerHasTierPurchasesLeft(ItemTier itemTier, BazaarPlayer bazaarPlayer)
+        internal bool PlayerHasTierPurchasesLeft(PickupTier pickupTier, BazaarPlayer bazaarPlayer)
         {
-            if(itemTier == ItemTier.Tier1)
+            if(pickupTier == PickupTier.Tier1)
             {
                 if (ModConfig.maxPlayerPurchasesTier1.Value == -1 || bazaarPlayer.tier1Purchases < ModConfig.maxPlayerPurchasesTier1.Value)
                     return true;
-            } else if(itemTier == ItemTier.Tier2)
+            }
+            else if (pickupTier == PickupTier.Tier2)
             {
                 if (ModConfig.maxPlayerPurchasesTier2.Value == -1 || bazaarPlayer.tier2Purchases < ModConfig.maxPlayerPurchasesTier2.Value)
                     return true;
-            } else if(itemTier == ItemTier.Tier3)
+            }
+            else if(pickupTier == PickupTier.Tier3)
             {
                 if (ModConfig.maxPlayerPurchasesTier3.Value == -1 || bazaarPlayer.tier3Purchases < ModConfig.maxPlayerPurchasesTier3.Value)
+                    return true;
+            }
+            else if (pickupTier == PickupTier.Boss)
+            {
+                if (ModConfig.maxPlayerPurchasesTierBoss.Value == -1 || bazaarPlayer.tierBossPurchases < ModConfig.maxPlayerPurchasesTierBoss.Value)
+                    return true;
+            }
+            else if (pickupTier == PickupTier.Lunar)
+            {
+                if (ModConfig.maxPlayerPurchasesTierLunar.Value == -1 || bazaarPlayer.tierLunarPurchases < ModConfig.maxPlayerPurchasesTierLunar.Value)
+                    return true;
+            }
+            else if (pickupTier == PickupTier.Equipment)
+            {
+                if (ModConfig.maxPlayerPurchasesTierEquipment.Value == -1 || bazaarPlayer.tierEquipmentPurchases < ModConfig.maxPlayerPurchasesTierEquipment.Value)
+                    return true;
+            }
+            else if (pickupTier == PickupTier.LunarEquipment)
+            {
+                if (ModConfig.maxPlayerPurchasesTierLunarEquipment.Value == -1 || bazaarPlayer.tierLunarEquipmentPurchases < ModConfig.maxPlayerPurchasesTierLunarEquipment.Value)
                     return true;
             }
             return false;
@@ -316,20 +267,20 @@ namespace BiggerBazaar
         }
 
         //
-        private int GetMaxPurchaseAmount(ItemTier itemTier)
-        {
-            switch (itemTier)
-            {
-                case ItemTier.Tier1:
-                    return ModConfig.maxChestPurchasesTier1.Value;
-                case ItemTier.Tier2:
-                    return ModConfig.maxChestPurchasesTier2.Value;
-                case ItemTier.Tier3:
-                    return ModConfig.maxChestPurchasesTier3.Value;
-            }
+        //private int GetMaxPurchaseAmount(ItemTier itemTier)
+        //{
+        //    switch (itemTier)
+        //    {
+        //        case ItemTier.Tier1:
+        //            return ModConfig.maxChestPurchasesTier1.Value;
+        //        case ItemTier.Tier2:
+        //            return ModConfig.maxChestPurchasesTier2.Value;
+        //        case ItemTier.Tier3:
+        //            return ModConfig.maxChestPurchasesTier3.Value;
+        //    }
 
-            return 0;
-        }
+        //    return 0;
+        //}
 
         // Bazaar players
         private void CreateBazaarPlayers()
@@ -478,43 +429,21 @@ namespace BiggerBazaar
                 }
             }
             done:;
-            ClearBazaarItems();
-            List<ItemTier> bazaarItemTiers;
-            bazaarItemTiers = PickRandomWeightedBazaarItemTiers(bazaarItemAmount);
 
-            uint playerMoney = 0;
-            for (int i = 0; i < bazaarPlayers.Count; i++)
-            {
-                playerMoney += bazaarPlayers[i].money;
-            }
-            if (AreAnyItemsAvailable())
+            ClearBazaarItems();
+            List<PickupTier> bazaarItemTiers = PickRandomWeightedBazaarItemTiers(bazaarItemAmount);
+            //uint playerMoney = 0;
+            //for (int i = 0; i < bazaarPlayers.Count; i++)
+            //{
+            //    playerMoney += bazaarPlayers[i].money;
+            //}
+            if (AreAnyItemsAvailable() && bazaarItemTiers != null)
             {
                 if (ModConfig.chestCostType.Value == 1)
                 {
                     for (int i = 0; i < bazaarItemTiers.Count; i++)
                     {
-                        int chestLunarCost;
-                        if (bazaarItemTiers[i] == ItemTier.Tier1)
-                        {
-                            chestLunarCost = ModConfig.tier1CostLunar.Value;
-                        }
-                        else if (bazaarItemTiers[i] == ItemTier.Tier2)
-                        {
-                            chestLunarCost = ModConfig.tier2CostLunar.Value;
-                        }
-                        else
-                        //if (bazaarItemTiers[i] == ItemTier.Tier3)
-                        {
-                            chestLunarCost = ModConfig.tier3CostLunar.Value;
-                        }
-                        //else if (bazaarItemTiers[i] == ItemTier.Boss)
-                        //{
-                        //    chestLunarCost = ModConfig.tierBossCostLunar.Value;
-                        //} else
-                        //{
-                        //    chestLunarCost = ModConfig.tierLunarCostLunar.Value;
-                        //}
-                        SpawnBazaarItemAt(bazaarItemPositions[i], bazaarItemRotations[i], bazaarItemTiers[i], chestLunarCost);
+                        SpawnBazaarItemAt(bazaarItemPositions[i], bazaarItemRotations[i], bazaarItemTiers[i], ModConfig.GetTierUnitConfig(bazaarItemTiers[i]).costLunar);
                     }
                     //}
                     // experimental price scaling
@@ -562,7 +491,6 @@ namespace BiggerBazaar
                     }
 
                 }
-
                 if (ModConfig.maxLunarExchanges.Value != 0)
                     SpawnMoneyLunarPod(moneyPodPosition);
 
@@ -585,7 +513,21 @@ namespace BiggerBazaar
 
         public static bool AreAnyItemsAvailable()
         {
-            return Run.instance.availableTier1DropList.Count + Run.instance.availableTier2DropList.Count + Run.instance.availableTier3DropList.Count != 0;
+            //Debug.LogWarning(Run.instance.availableTier1DropList.Count + " "
+            //    + Run.instance.availableTier2DropList.Count + " "
+            //    + Run.instance.availableTier3DropList.Count + " " 
+            //    + Run.instance.availableBossDropList.Count + " "
+            //    + Run.instance.availableLunarDropList.Count + " "
+            //    + Run.instance.availableEquipmentDropList.Count + " "
+            //    + Run.instance.availableLunarEquipmentDropList.Count);
+            return Run.instance.availableTier1DropList.Count 
+                + Run.instance.availableTier2DropList.Count 
+                + Run.instance.availableTier3DropList.Count
+                + Run.instance.availableBossDropList.Count
+                + Run.instance.availableLunarDropList.Count
+                + Run.instance.availableEquipmentDropList.Count
+                + Run.instance.availableLunarEquipmentDropList.Count
+                != 0;
         }
 
         IEnumerator TriggerInteractorBarrelInteraction(CharacterMaster master, int money)
