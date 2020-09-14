@@ -1,13 +1,14 @@
 ﻿using BepInEx;
 using R2API.Utils;
 using RoR2;
+using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
 
 namespace StartInBazaar
 {
     [BepInDependency("com.bepis.r2api")]
-    [BepInPlugin("com.MagnusMagnuson.StartInBazaar", "StartInBazaar", "0.1.1")]
+    [BepInPlugin("com.MagnusMagnuson.StartInBazaar", "StartInBazaar", "0.1.3")]
     [NetworkCompatibility(CompatibilityLevel.NoNeedForSync, VersionStrictness.DifferentModVersionsAreOk)]
     public class StartInBazaar : BaseUnityPlugin 
     {
@@ -25,8 +26,8 @@ namespace StartInBazaar
                 isFirstStage = true;
             };
 
-            On.RoR2.BazaarController.Start += (orig, self) =>
-            //On.RoR2.SceneDirector.Start += (orig, self) =>
+            //On.RoR2.BazaarController.Start += (orig, self) =>
+            On.RoR2.SceneDirector.Start += (orig, self) =>
             {
                 if (NetworkServer.active)
                 {
@@ -52,7 +53,7 @@ namespace StartInBazaar
         {
             for (int i = 0; i < PlayerCharacterMasterController.instances.Count; i++)
             {
-                PlayerCharacterMasterController.instances[i].master.GiveMoney((uint)money);
+                PlayerCharacterMasterController.instances[i].master.money += ((uint)money);
             };
         }
     }
