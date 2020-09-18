@@ -53,6 +53,11 @@ namespace BiggerBazaar
         //public static ConfigEntry<float> experimentalPriceScalingMinPercent;
         //public static ConfigEntry<float> experimentalPriceScalingMaxPercent;
 
+        //original Bazaar
+        public static ConfigEntry<bool> modifyOriginalBazaar;
+        public static ConfigEntry<int> seerLunarCost;
+        public static ConfigEntry<int> lunarBudLunarCost;
+
         public static ConfigEntry<int> tier1CostLunar;
         public static ConfigEntry<int> tier2CostLunar;
         public static ConfigEntry<int> tier3CostLunar;
@@ -61,8 +66,17 @@ namespace BiggerBazaar
         public static ConfigEntry<int> tierEquipmentCostLunar;
         public static ConfigEntry<int> tierLunarEquipmentCostLunar;
 
+        //other
+        public static ConfigEntry<bool> disableTransferMoney;
+        public static ConfigEntry<bool> nextLevelChestPriceScaling;
+
+        public static ConfigEntry<int> configNumber;
+
         public static BaseUnityPlugin ShareSuite;
         public static Dictionary<PickupTier, TierUnitConfig> tierConfigs = new Dictionary<PickupTier, TierUnitConfig>();
+
+        private static readonly int CurrentVersionNumber = 1;
+
 
         public static void InitConfig(ConfigFile config)
         {
@@ -410,9 +424,81 @@ namespace BiggerBazaar
             new ConfigDescription("Prevents the Sacrifice Artifact from removing the chests in the bazaar.")
             );
 
+            modifyOriginalBazaar = config.Bind(
+            "8. Original Bazaar Modifications",
+            "modifyOriginalBazaar",
+            false,
+            new ConfigDescription("If enabled, you can change the lunar cost of seer stations and lunar pods.")
+            );
+
+            seerLunarCost = config.Bind(
+            "8. Original Bazaar Modifications",
+            "seerLunarCost",
+            3,
+            new ConfigDescription("Set the lunar cost for seer stations.")
+            );
+
+            lunarBudLunarCost = config.Bind(
+            "8. Original Bazaar Modifications",
+            "lunarBudLunarCost",
+            2,
+            new ConfigDescription("Set the lunar cost for lunar buds.")
+            );
+
+            disableTransferMoney = config.Bind(
+            "9. Other",
+            "disableTransferMoney",
+            false,
+            new ConfigDescription("If set to true, no money will be transfered to the bazaar.")
+            );
+
+            nextLevelChestPriceScaling = config.Bind(
+            "9. Other",
+            "nextLevelChestPriceScaling",
+            false,
+            new ConfigDescription("If set to true, chest prices will be calculated based on how much things cost in the next stage, rather than the previous.")
+            );
+
+            configNumber = config.Bind(
+            "z_config version",
+            "config version",
+            0,
+            new ConfigDescription("No need to touch this")
+            );
+
             //experimentalPriceScaling.Value = false;
             CreateTierConfigs();
+
+            if (configNumber.Value < ModConfig.CurrentVersionNumber)
+            {
+                DeleteOldEntries(config);
+            }
         }
+
+        
+        
+
+        private static void DeleteOldEntries(ConfigFile config)
+        {
+            System.Reflection.PropertyInfo OrphanedEntriesProperty = typeof(ConfigFile).GetProperty("OrphanedEntries", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            Dictionary<ConfigDefinition, string> orphanedEntries = (Dictionary<ConfigDefinition, string>)OrphanedEntriesProperty.GetValue(config);
+            List<KeyValuePair<ConfigDefinition, string>> entriesToKeep = new List<KeyValuePair<ConfigDefinition, string>>();
+            foreach (var oe in orphanedEntries)
+            {
+                if(oe.Key.Section == "Config" || oe.Key.Section == "PlayerPurchaseLimits")
+                {
+                    entriesToKeep.Add(oe);
+                }
+            }
+            orphanedEntries.Clear();
+            foreach(var entry in entriesToKeep)
+            {
+                orphanedEntries.Add(new ConfigDefinition("z_backup_config (delete if you dont need it)", entry.Key.Key), entry.Value);
+            }
+            configNumber.Value = ModConfig.CurrentVersionNumber;
+            config.Save(); 
+        }
+
 
         internal static bool isShareSuiteActive()
         {

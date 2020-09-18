@@ -1,9 +1,12 @@
 ﻿using BepInEx;
 using BepInEx.Bootstrap;
+using On.EntityStates.CaptainSupplyDrop;
 using R2API.Utils;
 using RoR2;
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Unity;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -13,7 +16,7 @@ namespace BiggerBazaar
 {
     [BepInDependency("com.bepis.r2api")]
     [BepInDependency("com.funkfrog_sipondo.sharesuite", BepInDependency.DependencyFlags.SoftDependency)]
-    [BepInPlugin("com.MagnusMagnuson.BiggerBazaar", "BiggerBazaar", "1.11.0")]
+    [BepInPlugin("com.MagnusMagnuson.BiggerBazaar", "BiggerBazaar", "1.11.1")]
     [NetworkCompatibility(CompatibilityLevel.NoNeedForSync, VersionStrictness.DifferentModVersionsAreOk)]
     public class BiggerBazaar : BaseUnityPlugin
     {
@@ -68,9 +71,20 @@ namespace BiggerBazaar
             On.RoR2.GenericPickupController.OnSerialize += GenericPickupController_OnSerialize;
 
 
+            // Modify existing Lunar Shop
+            On.RoR2.BazaarController.SetUpSeerStations += BazaarController_SetUpSeerStations;
+            // Apparently there is a vanilla bug that allows captain to use supply drops in the bazaar???
+            On.EntityStates.CaptainSupplyDrop.HackingMainState.PurchaseInteractionIsValidTarget += HackingMainState_PurchaseInteractionIsValidTarget;
+        }
 
-            
-
+        private bool HackingMainState_PurchaseInteractionIsValidTarget(HackingMainState.orig_PurchaseInteractionIsValidTarget orig, PurchaseInteraction purchaseInteraction)
+        {
+            if (SceneInfo.instance.sceneDef.baseSceneName.ToLower().Contains("bazaar"))
+            {
+                return false;
+            }
+                
+            return orig(purchaseInteraction);
         }
 
         #region hooks
@@ -175,7 +189,7 @@ namespace BiggerBazaar
                 if (isCurrentStageBazaar)
                 {
                     bool isCreatingDroplet = false;
-                    if (!ModConfig.isShareSuiteLoaded)
+                    if (!ModConfig.isShareSuiteLoaded || !ModConfig.isShareSuiteActive())
                     {
                         isCreatingDroplet = true;
                     }
@@ -346,45 +360,7 @@ namespace BiggerBazaar
             orig(self, activator);
         }
 
-        private PickupTier PickupIndexToPickupTier(PickupIndex pickupIndex)
-        {
-            var isEquipment = PickupCatalog.GetPickupDef(pickupIndex).equipmentIndex == EquipmentIndex.None ? false : true;
-            if(!isEquipment)
-            {
-                var tier = ItemCatalog.GetItemDef((PickupCatalog.GetPickupDef(pickupIndex).itemIndex)).tier;
-                switch (tier)
-                {
-                    case ItemTier.Tier1:
-                        return PickupTier.Tier1;
-                    case ItemTier.Tier2:
-                        return PickupTier.Tier2;
-                    case ItemTier.Tier3:
-                        return PickupTier.Tier3;
-                    case ItemTier.Boss:
-                        return PickupTier.Boss;
-                    case ItemTier.Lunar:
-                        return PickupTier.Lunar;
-                    default:
-                        return PickupTier.None;
-                }
-            }
-            else
-            {
-                var isLunar = EquipmentCatalog.GetEquipmentDef((PickupCatalog.GetPickupDef(pickupIndex).equipmentIndex)).isLunar;
-                if (isLunar)
-                {
-                    return PickupTier.LunarEquipment;
-                }
-                else
-                {
-                    //if (EquipmentCatalog.GetEquipmentDef((PickupCatalog.GetPickupDef(pickupIndex).equipmentIndex)).isBoss)
-                    //    Debug.LogWarning("WAS A BOSS EQUIP!!? " + PickupCatalog.GetPickupDef(pickupIndex).nameToken);
-                    return PickupTier.Equipment;
-                }
-            }
-        }
-
-        private void GenericPickupController_AttemptGrant(On.RoR2.GenericPickupController.orig_AttemptGrant orig, GenericPickupController self, CharacterBody body)
+                private void GenericPickupController_AttemptGrant(On.RoR2.GenericPickupController.orig_AttemptGrant orig, GenericPickupController self, CharacterBody body)
         {
             if (NetworkServer.active)
             {
@@ -466,9 +442,67 @@ namespace BiggerBazaar
                 }
             }
             return orig(self, writer, forceAll);
-        } 
+        }
+
+        private void BazaarController_SetUpSeerStations(On.RoR2.BazaarController.orig_SetUpSeerStations orig, BazaarController self)
+        {
+            orig(self);
+            if (ModConfig.modifyOriginalBazaar.Value)
+            {
+                foreach (SeerStationController seerStationController in self.seerStations)
+                {
+                    seerStationController.GetComponent<PurchaseInteraction>().Networkcost = ModConfig.seerLunarCost.Value;
+                }
+
+                var purchaseInteractions = InstanceTracker.GetInstancesList<PurchaseInteraction>();
+                foreach (PurchaseInteraction purchaseInteraction in purchaseInteractions)
+                {
+                    if (purchaseInteraction.name.StartsWith("LunarShopTerminal") && purchaseInteraction.cost == 2)
+                    {
+                        purchaseInteraction.cost = ModConfig.lunarBudLunarCost.Value;
+                    };
+                }
+            }
+        }
         #endregion
 
+        private PickupTier PickupIndexToPickupTier(PickupIndex pickupIndex)
+        {
+            var isEquipment = PickupCatalog.GetPickupDef(pickupIndex).equipmentIndex == EquipmentIndex.None ? false : true;
+            if (!isEquipment)
+            {
+                var tier = ItemCatalog.GetItemDef((PickupCatalog.GetPickupDef(pickupIndex).itemIndex)).tier;
+                switch (tier)
+                {
+                    case ItemTier.Tier1:
+                        return PickupTier.Tier1;
+                    case ItemTier.Tier2:
+                        return PickupTier.Tier2;
+                    case ItemTier.Tier3:
+                        return PickupTier.Tier3;
+                    case ItemTier.Boss:
+                        return PickupTier.Boss;
+                    case ItemTier.Lunar:
+                        return PickupTier.Lunar;
+                    default:
+                        return PickupTier.None;
+                }
+            }
+            else
+            {
+                var isLunar = EquipmentCatalog.GetEquipmentDef((PickupCatalog.GetPickupDef(pickupIndex).equipmentIndex)).isLunar;
+                if (isLunar)
+                {
+                    return PickupTier.LunarEquipment;
+                }
+                else
+                {
+                    //if (EquipmentCatalog.GetEquipmentDef((PickupCatalog.GetPickupDef(pickupIndex).equipmentIndex)).isBoss)
+                    //    Debug.LogWarning("WAS A BOSS EQUIP!!? " + PickupCatalog.GetPickupDef(pickupIndex).nameToken);
+                    return PickupTier.Equipment;
+                }
+            }
+        }
 
         IEnumerator BroadcastShopSettings()
         {

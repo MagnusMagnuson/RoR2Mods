@@ -81,8 +81,20 @@ namespace BiggerBazaar
                 //chestPI.SetDirtyBit(12u);
             }
             else if(cost == -1) {
-                chestPI.Networkcost = GetDifficultyScaledCostFromItemTier(pickupTier);
-            } else
+                if(ModConfig.nextLevelChestPriceScaling.Value)
+                {
+                    //next level price scaling
+                    chestPI.Networkcost = Run.instance.GetDifficultyScaledCost(ModConfig.GetTierUnitConfig(pickupTier).cost);
+                }
+                else
+                {
+                    //previous level price scaling
+                    chestPI.Networkcost = GetDifficultyScaledCostFromItemTier(pickupTier);
+                }
+                
+                
+            }
+            else
             {
                 chestPI.Networkcost = GetDifficultyScaledCost(cost);
             }
@@ -288,9 +300,18 @@ namespace BiggerBazaar
             for (int i = 0; i < PlayerCharacterMasterController.instances.Count; i++)
             {
                 PlayerCharacterMasterController pcmc = PlayerCharacterMasterController.instances[i];
-                BazaarPlayer pm = new BazaarPlayer(pcmc.networkUser, pcmc.master.money);
+                BazaarPlayer pm;
+                if (!ModConfig.disableTransferMoney.Value)
+                {
+                    pm = new BazaarPlayer(pcmc.networkUser, pcmc.master.money);
+                    pcmc.master.money = 0;
+                } else
+                {
+                    pm = new BazaarPlayer(pcmc.networkUser, 0);
+                }
+                
                 bazaarPlayers.Add(pm);
-                pcmc.master.money = 0;
+                
             }
         }
 
@@ -532,7 +553,6 @@ namespace BiggerBazaar
 
         IEnumerator TriggerInteractorBarrelInteraction(CharacterMaster master, int money)
         {
-            Debug.LogWarning("in coroutine");
             yield return new WaitUntil(() => master.GetBody() != null);
             yield return new WaitUntil(() => master.GetBody().gameObject.GetComponentInChildren<Interactor>() != null);
             ShareSuiteMoneyFix(master.GetBody().gameObject.GetComponentInChildren<Interactor>(), money - Math.Abs((int)master.money));
@@ -544,7 +564,6 @@ namespace BiggerBazaar
         //    yield return new WaitUntil(() => master.GetBody().gameObject.GetComponentInChildren<Interactor>() != null);
         //    yield return new WaitForSeconds(3f);
         //    MoneySharingHooks.AddMoneyExternal(money);
-        //    Debug.Log("jakd");
         //}
 
         public float CurrentDifficultyCoefficient
