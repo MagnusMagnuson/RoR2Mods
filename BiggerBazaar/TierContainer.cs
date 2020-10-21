@@ -48,7 +48,7 @@ namespace BiggerBazaar
     public struct TemporaryTierUnit
     {
         public PickupTier pickupTier;
-        public int cost;
+        public float cost;
         public int costLunar;
         public float rarity;
         public int maxChestPurchases;

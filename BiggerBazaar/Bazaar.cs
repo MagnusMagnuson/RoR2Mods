@@ -93,12 +93,14 @@ namespace BiggerBazaar
                 if(ModConfig.nextLevelChestPriceScaling.Value)
                 {
                     //next level price scaling
-                    chestPI.Networkcost = Run.instance.GetDifficultyScaledCost(ModConfig.GetTierUnitConfig(pickupTier).cost);
+                    chestPI.Networkcost = Run.instance.GetDifficultyScaledCost(chestPI.cost);
+                    chestPI.Networkcost = (int)(chestPI.Networkcost * ModConfig.GetTierUnitConfig(pickupTier).cost);
                 }
                 else
                 {
                     //previous level price scaling
-                    chestPI.Networkcost = GetDifficultyScaledCostFromItemTier(pickupTier);
+                    chestPI.Networkcost = GetDifficultyScaledCostFromItemTier(chestPI.cost);
+                    chestPI.Networkcost = (int)(chestPI.Networkcost * ModConfig.GetTierUnitConfig(pickupTier).cost);
                 }
                 
                 
@@ -231,9 +233,8 @@ namespace BiggerBazaar
         //}
 
         // scale item cost
-        private int GetDifficultyScaledCostFromItemTier(PickupTier pickupTier)
+        private int GetDifficultyScaledCostFromItemTier(int baseCost)
         {
-            int baseCost = ModConfig.GetTierUnitConfig(pickupTier).cost;
             return (int)((double)baseCost * (double)Mathf.Pow(CurrentDifficultyCoefficient, 1.25f));
         }
 

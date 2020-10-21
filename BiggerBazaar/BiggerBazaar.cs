@@ -17,7 +17,7 @@ namespace BiggerBazaar
 {
     [BepInDependency("com.bepis.r2api")]
     [BepInDependency("com.funkfrog_sipondo.sharesuite", BepInDependency.DependencyFlags.SoftDependency)]
-    [BepInPlugin("com.MagnusMagnuson.BiggerBazaar", "BiggerBazaar", "1.12.5")]
+    [BepInPlugin("com.MagnusMagnuson.BiggerBazaar", "BiggerBazaar", "1.12.6")]
     [NetworkCompatibility(CompatibilityLevel.NoNeedForSync, VersionStrictness.DifferentModVersionsAreOk)]
     public class BiggerBazaar : BaseUnityPlugin
     {
@@ -246,7 +246,7 @@ namespace BiggerBazaar
                     }
                     if (bazaar.IsMoneyLunarPod(self.gameObject))
                     {
-                        List<PickupIndex> newList = new List<PickupIndex> { PickupIndex. };
+                        List<PickupIndex> newList = new List<PickupIndex> { PickupIndex.none };
                         orig(self, newList);
                         return;
                     }

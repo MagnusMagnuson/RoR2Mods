@@ -12,13 +12,13 @@ namespace BiggerBazaar
         public static ConfigEntry<int> lunarCoinWorth;
         public static ConfigEntry<int> maxLunarExchanges;
         public static ConfigEntry<int> chestCostType;
-        public static ConfigEntry<int> tier1Cost;
-        public static ConfigEntry<int> tier2Cost;
-        public static ConfigEntry<int> tier3Cost;
-        public static ConfigEntry<int> tierBossCost;
-        public static ConfigEntry<int> tierLunarCost;
-        public static ConfigEntry<int> tierEquipmentCost;
-        public static ConfigEntry<int> tierLunarEquipmentCost;
+        public static ConfigEntry<float> tier1Cost;
+        public static ConfigEntry<float> tier2Cost;
+        public static ConfigEntry<float> tier3Cost;
+        public static ConfigEntry<float> tierBossCost;
+        public static ConfigEntry<float> tierLunarCost;
+        public static ConfigEntry<float> tierEquipmentCost;
+        public static ConfigEntry<float> tierLunarEquipmentCost;
         public static ConfigEntry<float> tier1Rarity;
         public static ConfigEntry<float> tier2Rarity;
         public static ConfigEntry<float> tier3Rarity;
@@ -75,7 +75,7 @@ namespace BiggerBazaar
         public static BaseUnityPlugin ShareSuite;
         public static Dictionary<PickupTier, TierUnitConfig> tierConfigs = new Dictionary<PickupTier, TierUnitConfig>();
 
-        private static readonly int CurrentVersionNumber = 1;
+        private static readonly int CurrentVersionNumber = 2;
 
 
         public static void InitConfig(ConfigFile config)
@@ -114,53 +114,53 @@ namespace BiggerBazaar
 
             tier1Cost = config.Bind(
             "1. TierCost",
-            "tier1ChestCost",
-            25,
-            new ConfigDescription("Set the base cost for tier 1 items (white). This scales automatically with difficulty and player amount.\nA value of 25 means that these items will cost as much as a small chest in the prior stage (the one you opened the shop portal in) \n(Default value: 25)")
+            "tier1ChestCostMulti",
+            1f,
+            new ConfigDescription("Set the base cost multiplier for tier 1 items (white). This scales automatically with difficulty and player amount.\nA value of 1 means that these items will cost as much as a small chest in the prior stage (the one you opened the shop portal in) \n(Default value: 1)")
             );
             //tier1Cost = tier1CostConf.Value;
 
             tier2Cost = config.Bind(
             "1. TierCost",
-            "tier2ChestCost",
-            50,
-            new ConfigDescription("Set the base cost for tier 2 items (green). This scales automatically with difficulty and player amount.\nA value of 50 means that these items will cost as much as a medium chest in the prior stage (the one you opened the shop portal in) \n(Default value: 50)")
+            "tier2ChestCostMulti",
+            2f,
+            new ConfigDescription("Set the base cost multiplier for tier 2 items (green). This scales automatically with difficulty and player amount.\nA value of 2 means that these items will cost as much as a medium chest in the prior stage (the one you opened the shop portal in) \n(Default value: 2)")
             );
             //tier2Cost = tier2CostConf.Value;
 
             tier3Cost = config.Bind(
             "1. TierCost",
-            "tier3ChestCost",
-            400,
-            new ConfigDescription("Set the base cost for tier 3 items (red). This scales automatically with difficulty and player amount.\nA value of 400 means that these items will cost as much as a legendary chest in the prior stage (the one you opened the shop portal in) \n(Default value: 400)")
+            "tier3ChestCostMulti",
+            16f,
+            new ConfigDescription("Set the base cost multiplier for tier 3 items (red). This scales automatically with difficulty and player amount.\nA value of 16 means that these items will cost as much as a legendary chest in the prior stage (the one you opened the shop portal in) \n(Default value: 16)")
             );
 
             tierBossCost = config.Bind(
             "1. TierCost",
-            "tierBossCost",
-            600,
-            new ConfigDescription("Set the base cost for boss tier items (yellow). This scales automatically with difficulty and player amount. (Default value: 600, untested)")
+            "tierBossCostMulti",
+            24f,
+            new ConfigDescription("Set the base cost multiplier for boss tier items (yellow). This scales automatically with difficulty and player amount. (Default value: 24, untested)")
             );
 
             tierLunarCost = config.Bind(
             "1. TierCost",
-            "tierLunarCost",
-            400,
-            new ConfigDescription("Set the base cost for lunar tier items (blue). This scales automatically with difficulty and player amount. (Default value: 400, untested)")
+            "tierLunarCostMulti",
+            16f,
+            new ConfigDescription("Set the base cost multiplier for lunar tier items (blue). This scales automatically with difficulty and player amount. (Default value: 16, untested)")
             );
 
             tierEquipmentCost = config.Bind(
             "1. TierCost",
-            "tierEquipmentCost",
-            200,
-            new ConfigDescription("Set the base cost for equipment tier items (orange). This scales automatically with difficulty and player amount. (Default value: 200, untested)")
+            "tierEquipmentCostMulti",
+            8f,
+            new ConfigDescription("Set the base cost multiplier for equipment tier items (orange). This scales automatically with difficulty and player amount. (Default value: 8, untested)")
             );
 
             tierLunarEquipmentCost = config.Bind(
             "1. TierCost",
-            "tierLunarEquipmentCost",
-            400,
-            new ConfigDescription("Set the base cost for lunar equipment tier items (blue). This scales automatically with difficulty and player amount. (Default value: 400, untested)")
+            "tierLunarEquipmentCostMulti",
+            16f,
+            new ConfigDescription("Set the base cost multiplier for lunar equipment tier items (blue). This scales automatically with difficulty and player amount. (Default value: 16, untested)")
             );
 
             tier1Rarity = config.Bind(
@@ -469,6 +469,11 @@ namespace BiggerBazaar
             //experimentalPriceScaling.Value = false;
             CreateTierConfigs();
 
+
+            if(configNumber.Value == 1)
+            {
+                UpdateTierCostToMulti(config);
+            }
             if (configNumber.Value < ModConfig.CurrentVersionNumber)
             {
                 DeleteOldEntries(config);
@@ -476,7 +481,43 @@ namespace BiggerBazaar
         }
 
         
-        
+        private static void UpdateTierCostToMulti(ConfigFile config)
+        {
+            System.Reflection.PropertyInfo OrphanedEntriesProperty = typeof(ConfigFile).GetProperty("OrphanedEntries", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            Dictionary<ConfigDefinition, string> orphanedEntries = (Dictionary<ConfigDefinition, string>)OrphanedEntriesProperty.GetValue(config);
+            List<KeyValuePair<ConfigDefinition, string>> entriesToKeep = new List<KeyValuePair<ConfigDefinition, string>>();
+            foreach (var oe in orphanedEntries)
+            {
+                if (oe.Key.Section == "1. TierCost")
+                {
+                    switch (oe.Key.Key)
+                    {
+                        case "tier1ChestCost":
+                            tier1Cost.Value = int.Parse(oe.Value) / 25;
+                            break;
+                        case "tier2ChestCost":
+                            tier2Cost.Value = int.Parse(oe.Value) / 25;
+                            break;
+                        case "tier3ChestCost":
+                            tier3Cost.Value = int.Parse(oe.Value) / 25;
+                            break;
+                        case "tierBossCost":
+                            tierBossCost.Value = int.Parse(oe.Value) / 25;
+                            break;
+                        case "tierLunarCost":
+                            tierLunarCost.Value = int.Parse(oe.Value) / 25;
+                            break;
+                        case "tierEquipmentCost":
+                            tierEquipmentCost.Value = int.Parse(oe.Value) / 25;
+                            break;
+                        case "tierLunarEquipmentCost":
+                            tierLunarEquipmentCost.Value = int.Parse(oe.Value) / 25;
+                            break;
+                    }
+                    config.Save();
+                }
+            }
+        }
 
         private static void DeleteOldEntries(ConfigFile config)
         {
@@ -625,7 +666,7 @@ namespace BiggerBazaar
         public struct TierUnitConfig
         {
             public float rarity;
-            public int cost;
+            public float cost;
             public int costLunar;
             public int maxChestPurchases;
         }
