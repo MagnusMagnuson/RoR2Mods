@@ -405,7 +405,7 @@ namespace BiggerBazaar
             "6. ShareSuite",
             "ShareSuiteItemSharingEnabled",
             false,
-            new ConfigDescription("This option is only relevant if you are using ShareSuite, otherwise ignore. \nSetting this to false, will disable item sharing for Bigger Bazaar items and put items directly into the buyers inventory, instead of having it pop out from the chest and drop on the floor and effectively sharing it with everyone on pickup.\nAutomatically turned on if money sharing is enabled in ShareSuite")
+            new ConfigDescription("This option is only relevant if you are using ShareSuite, otherwise ignore. \nSetting this to false, will disable item sharing for Bigger Bazaar items and put items directly into the buyers inventory, instead of having it pop out from the chest and drop on the floor and effectively sharing it with everyone on pickup.\nNo longer automatically turned on if money sharing is enabled in ShareSuite")
             );
 
             ShareSuiteTotalPurchaseSharing = config.Bind(
@@ -525,10 +525,11 @@ namespace BiggerBazaar
         internal static void SetShareSuiteReference(BaseUnityPlugin ShareSuiteInstance)
         {
             ShareSuite = ShareSuiteInstance;
-            if (IsShareSuiteMoneySharing()) // there seems to be some redundancy here ...
-            {
-                ModConfig.ShareSuiteItemSharingEnabled.Value = true;
-            }
+            IsShareSuiteMoneySharing();
+            //if (IsShareSuiteMoneySharing()) // there seems to be some redundancy here ...
+            //{
+            //    ModConfig.ShareSuiteItemSharingEnabled.Value = true;
+            //}
         }
 
         public static bool IsShareSuiteMoneySharing()
@@ -540,10 +541,10 @@ namespace BiggerBazaar
                     return false;
 
                 sharing = ShareSuite.GetFieldValue<ConfigEntry<bool>>("MoneyIsShared").Value;
-                if (sharing)
-                {
-                    ModConfig.ShareSuiteItemSharingEnabled.Value = true;
-                }
+                //if (sharing)
+                //{
+                //    ModConfig.ShareSuiteItemSharingEnabled.Value = true;
+                //}
             }
             return sharing;
 
