@@ -1,5 +1,6 @@
 ﻿using BepInEx;
 using BepInEx.Bootstrap;
+using EntityStates;
 using On.EntityStates.CaptainSupplyDrop;
 using R2API.Utils;
 using RoR2;
@@ -16,7 +17,7 @@ namespace BiggerBazaar
 {
     [BepInDependency("com.bepis.r2api")]
     [BepInDependency("com.funkfrog_sipondo.sharesuite", BepInDependency.DependencyFlags.SoftDependency)]
-    [BepInPlugin("com.MagnusMagnuson.BiggerBazaar", "BiggerBazaar", "1.12.0")]
+    [BepInPlugin("com.MagnusMagnuson.BiggerBazaar", "BiggerBazaar", "1.12.5")]
     [NetworkCompatibility(CompatibilityLevel.NoNeedForSync, VersionStrictness.DifferentModVersionsAreOk)]
     public class BiggerBazaar : BaseUnityPlugin
     {
@@ -27,7 +28,7 @@ namespace BiggerBazaar
         private void Start()
         {
             foreach (var kvp in Chainloader.PluginInfos)
-            {
+            { 
                 if (kvp.Key == "com.funkfrog_sipondo.sharesuite")
                 {
                     ModConfig.SetShareSuiteReference(kvp.Value.Instance);
@@ -45,7 +46,7 @@ namespace BiggerBazaar
         //}
 
         public void Awake()
-        {
+        { 
             ModConfig.InitConfig(Config);
 
             bazaar = new Bazaar();
@@ -60,6 +61,9 @@ namespace BiggerBazaar
             On.RoR2.PickupDisplay.SetPickupIndex += PickupDisplay_SetPickupIndex;
 
             On.RoR2.ChestBehavior.Open += ChestBehavior_Open;
+
+            // Compatibility for ForesightArtifact
+            On.RoR2.ChestBehavior.PickFromList += ChestBehavior_PickFromList;
 
             On.RoR2.PurchaseInteraction.OnInteractionBegin += PurchaseInteraction_OnInteractionBegin;
 
@@ -79,7 +83,7 @@ namespace BiggerBazaar
 
         private bool HackingMainState_PurchaseInteractionIsValidTarget(HackingMainState.orig_PurchaseInteractionIsValidTarget orig, PurchaseInteraction purchaseInteraction)
         {
-            if (SceneInfo.instance.sceneDef.baseSceneName.ToLower().Contains("bazaar"))
+            if (SceneCatalog.mostRecentSceneDef == SceneCatalog.GetSceneDefFromSceneName("bazaar"))
             {
                 return false;
             }
@@ -120,9 +124,10 @@ namespace BiggerBazaar
         {
             if (NetworkServer.active)
             {
-                if (SceneManager.GetActiveScene().name.Contains("bazaar"))
+                //if (SceneManager.GetActiveScene().name.Contains("bazaar"))
+                if (SceneCatalog.mostRecentSceneDef == SceneCatalog.GetSceneDefFromSceneName("bazaar"))
                 {
-                    Debug.LogWarning("Hello, log inspector. Hooking SceneDirector.Start in the Bazaar always throws an exception, no matter what you do (vanilla bug). Luckily, it doesn't affect anything and it's unlikely that any of the mods mentioned here are the reason you are checking the log.");
+                    //Debug.LogWarning("Hello, log inspector. Hooking SceneDirector.Start in the Bazaar always throws an exception, no matter what you do (vanilla bug). Luckily, it doesn't affect anything and it's unlikely that any of the mods mentioned here are the reason you are checking the log.");
                     var sacrificeArtifactDef = ArtifactCatalog.FindArtifactDef("Sacrifice");
                     bool isUsingSacrificeArtifact = false;
 
@@ -222,6 +227,32 @@ namespace BiggerBazaar
                 };
             }
             orig(self);
+        }
+
+        private void ChestBehavior_PickFromList(On.RoR2.ChestBehavior.orig_PickFromList orig, ChestBehavior self, List<PickupIndex> dropList)
+        {
+            if (NetworkServer.active)
+            {
+                if (isCurrentStageBazaar)
+                {
+                    foreach (BazaarItem bazaarItem in bazaar.GetBazaarItems())
+                    {
+                        if (bazaarItem.chestBehavior == self)
+                        {
+                            List<PickupIndex> newList = new List<PickupIndex> { bazaarItem.pickupIndex };
+                            orig(self, newList);
+                            return;
+                        }
+                    }
+                    if (bazaar.IsMoneyLunarPod(self.gameObject))
+                    {
+                        List<PickupIndex> newList = new List<PickupIndex> { PickupIndex. };
+                        orig(self, newList);
+                        return;
+                    }
+                }
+            }
+            orig(self, dropList);
         }
 
         private void PurchaseInteraction_OnInteractionBegin(On.RoR2.PurchaseInteraction.orig_OnInteractionBegin orig, PurchaseInteraction self, Interactor activator)
@@ -341,6 +372,7 @@ namespace BiggerBazaar
                         {
                             self.GetComponent<PurchaseInteraction>().SetAvailable(false);
                         }
+ 
                         Vector3 effectPos = self.transform.position;
                         effectPos.y -= 1;
                         EffectManager.SpawnEffect(Resources.Load<GameObject>("Prefabs/Effects/ShrineUseEffect"), new EffectData()
@@ -454,17 +486,23 @@ namespace BiggerBazaar
                     seerStationController.GetComponent<PurchaseInteraction>().Networkcost = ModConfig.seerLunarCost.Value;
                 }
 
-                var purchaseInteractions = InstanceTracker.GetInstancesList<PurchaseInteraction>();
-                foreach (PurchaseInteraction purchaseInteraction in purchaseInteractions)
-                {
-                    if (purchaseInteraction.name.StartsWith("LunarShopTerminal") && purchaseInteraction.cost == 2)
-                    {
-                        purchaseInteraction.cost = ModConfig.lunarBudLunarCost.Value;
-                    };
-                }
+                StartCoroutine(delayedPriceChangeLunarShop());
             }
         }
         #endregion
+
+        private IEnumerator delayedPriceChangeLunarShop()
+        {
+            yield return new WaitForSeconds(2f);
+            var purchaseInteractions = InstanceTracker.GetInstancesList<PurchaseInteraction>();
+            foreach (PurchaseInteraction purchaseInteraction in purchaseInteractions) 
+            {
+                if (purchaseInteraction.name.StartsWith("LunarShopTerminal") && purchaseInteraction.cost == 2)
+                {
+                    purchaseInteraction.Networkcost = ModConfig.lunarBudLunarCost.Value;
+                };
+            }
+        }
 
         private PickupTier PickupIndexToPickupTier(PickupIndex pickupIndex)
         {

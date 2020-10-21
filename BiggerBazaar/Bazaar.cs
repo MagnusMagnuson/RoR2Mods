@@ -4,6 +4,7 @@ using RoR2;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 using UnityEngine.Networking;
 using Random = System.Random;
@@ -41,7 +42,15 @@ namespace BiggerBazaar
         private void SpawnBazaarItemAt(Vector3 position, Vector3 rotation, PickupTier pickupTier, int cost)
         {
             // chest players interact with
-            SpawnCard chestCard = Resources.Load<SpawnCard>("SpawnCards/InteractableSpawnCard/iscChest1");
+            SpawnCard chestCard;
+            if (ModConfig.chestCostType.Value == 0)
+            {
+                chestCard = Resources.Load<SpawnCard>("SpawnCards/InteractableSpawnCard/iscChest1");
+            }
+            else
+            {
+                chestCard = Resources.Load<SpawnCard>("SpawnCards/InteractableSpawnCard/iscLunarChest"); 
+            }
             DirectorPlacementRule placementRule = new DirectorPlacementRule();
             placementRule.placementMode = DirectorPlacementRule.PlacementMode.Direct;
             GameObject chest = chestCard.DoSpawn(position, Quaternion.Euler(new Vector3(0f, 0f, 0f)), new DirectorSpawnRequest(chestCard, placementRule, Run.instance.runRNG)).spawnedInstance;
@@ -430,26 +439,29 @@ namespace BiggerBazaar
         public void StartBazaar(BiggerBazaar biggerBazaar)
         {
             isUsingexperimentalScaling = false;
-            for (int i = 0; i < PlayerCharacterMasterController.instances.Count; i++)
+            if(!ModConfig.disableTransferMoney.Value)
             {
-                for (int j = 0; j < bazaarPlayers.Count; j++)
+                for (int i = 0; i < PlayerCharacterMasterController.instances.Count; i++)
                 {
-                    if (bazaarPlayers[j].networkUser == PlayerCharacterMasterController.instances[i].networkUser)
+                    for (int j = 0; j < bazaarPlayers.Count; j++)
                     {
-                        if (!ModConfig.IsShareSuiteMoneySharing())
+                        if (bazaarPlayers[j].networkUser == PlayerCharacterMasterController.instances[i].networkUser)
                         {
-                            PlayerCharacterMasterController.instances[i].master.money = bazaarPlayers[j].money;
-                            break;
+                            if (!ModConfig.IsShareSuiteMoneySharing())
+                            {
+                                PlayerCharacterMasterController.instances[i].master.money = bazaarPlayers[j].money;
+                                break;
+                            }
+
+                            //ShareSuite.MoneySharingHooks.AddMoneyExternal((int)this.bazaarPlayers[j].money);
+                            biggerBazaar.StartCoroutine(TriggerInteractorBarrelInteraction(PlayerCharacterMasterController.instances[i].master, GetShareSuiteSharedMoneyValue()));
+                            goto done; 
+
                         }
-
-                        //ShareSuite.MoneySharingHooks.AddMoneyExternal((int)this.bazaarPlayers[j].money);
-                        biggerBazaar.StartCoroutine(TriggerInteractorBarrelInteraction(PlayerCharacterMasterController.instances[i].master, (int)this.bazaarPlayers[j].money));
-                        goto done; 
-
                     }
                 }
+                done:;
             }
-            done:;
 
             ClearBazaarItems();
             List<PickupTier> bazaarItemTiers = PickRandomWeightedBazaarItemTiers(bazaarItemAmount);
@@ -530,6 +542,12 @@ namespace BiggerBazaar
                 }
             }
             
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private int GetShareSuiteSharedMoneyValue()
+        {
+            return ShareSuite.MoneySharingHooks.SharedMoneyValue;
         }
 
         public static bool AreAnyItemsAvailable()
