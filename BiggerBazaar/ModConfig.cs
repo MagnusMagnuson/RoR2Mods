@@ -44,6 +44,7 @@ namespace BiggerBazaar
         public static ConfigEntry<bool> BroadcastShopSettings;
         public static ConfigEntry<bool> ShareSuiteItemSharingEnabled;
         public static ConfigEntry<bool> ShareSuiteTotalPurchaseSharing;
+        //public static ConfigEntry<bool> ShareSuiteDestroyOldEquipment;
         public static ConfigEntry<bool> sacrificeArtifactAllowChests;
         //public static ConfigEntry<bool> ShareSuiteMoneySharingEnabled;
         public static bool infiniteLunarExchanges = false;
@@ -415,6 +416,13 @@ namespace BiggerBazaar
             new ConfigDescription("This option is only relevant if you are using ShareSuite, otherwise ignore. \nSets the total amount of available purchases (maxPlayerPurchases in this config) to count for the whole party, rather than individual players.\nThis makes sense if you're sharing money and items.")
             );
 
+            //ShareSuiteDestroyOldEquipment = config.Bind(
+            //"6. ShareSuite",
+            //"ShareSuiteDestroyOldEquipment",
+            //false,
+            //new ConfigDescription("This option is only relevant if you are using ShareSuite, otherwise ignore. \nSetting this option to false means that your current equipment is dropped on the floor, rather than destroying it, when buying new equipment.")
+            //);
+
             isShareSuiteLoaded = IsShareSuiteLoaded();
 
             sacrificeArtifactAllowChests = config.Bind(
@@ -480,7 +488,6 @@ namespace BiggerBazaar
             }
         }
 
-        
         private static void UpdateTierCostToMulti(ConfigFile config)
         {
             System.Reflection.PropertyInfo OrphanedEntriesProperty = typeof(ConfigFile).GetProperty("OrphanedEntries", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
@@ -589,6 +596,23 @@ namespace BiggerBazaar
             }
             return sharing;
 
+        }
+
+        public static bool isShareSuiteEquipmentSharing()
+        {
+            bool sharing = false;
+            if (ShareSuite != null)
+            {
+                if (!isShareSuiteActive())
+                    return false;
+
+                sharing = ShareSuite.GetFieldValue<ConfigEntry<bool>>("EquipmentShared").Value;
+                //if (sharing)
+                //{
+                //    ModConfig.ShareSuiteItemSharingEnabled.Value = true;
+                //}
+            }
+            return sharing;
         }
 
         private static void CreateTierConfigs()

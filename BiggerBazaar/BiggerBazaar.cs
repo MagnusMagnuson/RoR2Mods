@@ -17,12 +17,12 @@ namespace BiggerBazaar
 {
     [BepInDependency("com.bepis.r2api")]
     [BepInDependency("com.funkfrog_sipondo.sharesuite", BepInDependency.DependencyFlags.SoftDependency)]
-    [BepInPlugin("com.MagnusMagnuson.BiggerBazaar", "BiggerBazaar", "1.12.6")]
+    [BepInPlugin("com.MagnusMagnuson.BiggerBazaar", "BiggerBazaar", "1.12.9")]
     [NetworkCompatibility(CompatibilityLevel.NoNeedForSync, VersionStrictness.DifferentModVersionsAreOk)]
     public class BiggerBazaar : BaseUnityPlugin
     {
 
-        bool isCurrentStageBazaar = false;
+        //bool isCurrentStageBazaar = false;
         Bazaar bazaar;
 
         private void Start()
@@ -83,7 +83,7 @@ namespace BiggerBazaar
 
         private bool HackingMainState_PurchaseInteractionIsValidTarget(HackingMainState.orig_PurchaseInteractionIsValidTarget orig, PurchaseInteraction purchaseInteraction)
         {
-            if (SceneCatalog.mostRecentSceneDef == SceneCatalog.GetSceneDefFromSceneName("bazaar"))
+            if (isCurrentStageBazaar())
             {
                 return false;
             }
@@ -125,7 +125,7 @@ namespace BiggerBazaar
             if (NetworkServer.active)
             {
                 //if (SceneManager.GetActiveScene().name.Contains("bazaar"))
-                if (SceneCatalog.mostRecentSceneDef == SceneCatalog.GetSceneDefFromSceneName("bazaar"))
+                if (isCurrentStageBazaar())
                 {
                     //Debug.LogWarning("Hello, log inspector. Hooking SceneDirector.Start in the Bazaar always throws an exception, no matter what you do (vanilla bug). Luckily, it doesn't affect anything and it's unlikely that any of the mods mentioned here are the reason you are checking the log.");
                     var sacrificeArtifactDef = ArtifactCatalog.FindArtifactDef("Sacrifice");
@@ -141,7 +141,6 @@ namespace BiggerBazaar
                         RunArtifactManager.instance.SetArtifactEnabledServer(sacrificeArtifactDef, false);
                     }
 
-                    isCurrentStageBazaar = true;
                     // only the case if you start the run in the bazaar
                     if (Run.instance.stageClearCount == 0)
                     {
@@ -158,7 +157,6 @@ namespace BiggerBazaar
                 }
                 else
                 {
-                    isCurrentStageBazaar = false;
                     bazaar.CurrentDifficultyCoefficient = Run.instance.difficultyCoefficient;
 
                 }
@@ -170,7 +168,7 @@ namespace BiggerBazaar
         {
             if (NetworkServer.active)
             {
-                if (isCurrentStageBazaar)
+                if (isCurrentStageBazaar())
                 {
                     List<BazaarItem> bazaarItems = bazaar.GetBazaarItems();
                     for (int i = 0; i < bazaarItems.Count; i++)
@@ -191,7 +189,7 @@ namespace BiggerBazaar
         {
             if (NetworkServer.active)
             {
-                if (isCurrentStageBazaar)
+                if (isCurrentStageBazaar())
                 {
                     bool isCreatingDroplet = false;
                     if (!ModConfig.isShareSuiteLoaded || !ModConfig.isShareSuiteActive())
@@ -233,7 +231,7 @@ namespace BiggerBazaar
         {
             if (NetworkServer.active)
             {
-                if (isCurrentStageBazaar)
+                if (isCurrentStageBazaar())
                 {
                     foreach (BazaarItem bazaarItem in bazaar.GetBazaarItems())
                     {
@@ -257,7 +255,7 @@ namespace BiggerBazaar
 
         private void PurchaseInteraction_OnInteractionBegin(On.RoR2.PurchaseInteraction.orig_OnInteractionBegin orig, PurchaseInteraction self, Interactor activator)
         {
-            if (isCurrentStageBazaar)
+            if (isCurrentStageBazaar())
             {
                 NetworkUser networkUser = Util.LookUpBodyNetworkUser(activator.gameObject);
                 BazaarPlayer bazaarPlayer = bazaar.GetBazaarPlayer(networkUser);
@@ -348,7 +346,21 @@ namespace BiggerBazaar
                     if (bazaarChestIndex != -1)
                     {
                         CharacterMaster master = activator.GetComponent<CharacterBody>().master;
-                        master.inventory.GiveItem(PickupCatalog.GetPickupDef(bazaarItems[bazaarChestIndex].pickupIndex).itemIndex);
+                        var isEquipment = PickupCatalog.GetPickupDef(bazaarItems[bazaarChestIndex].pickupIndex).equipmentIndex == EquipmentIndex.None ? false : true;
+                        if (!isEquipment)
+                        {
+                            master.inventory.GiveItem(PickupCatalog.GetPickupDef(bazaarItems[bazaarChestIndex].pickupIndex).itemIndex);
+                        }
+                        else
+                        {
+                            if(!ModConfig.isShareSuiteEquipmentSharing())
+                            {
+                                PickupDropletController.CreatePickupDroplet(PickupCatalog.FindPickupIndex(master.inventory.GetEquipmentIndex()), master.GetBody().gameObject.transform.position + Vector3.up * 1.5f, Vector3.up * 20f + self.transform.forward * 2f);
+                            }
+                            master.inventory.SetEquipmentIndex(PickupCatalog.GetPickupDef(bazaarItems[bazaarChestIndex].pickupIndex).equipmentIndex);
+                        }
+                        
+                        
                         if (ModConfig.chestCostType.Value == 1)
                         {
                             var netUser = Util.LookUpBodyNetworkUser(master.GetBody());
@@ -396,7 +408,7 @@ namespace BiggerBazaar
         {
             if (NetworkServer.active)
             {
-                if (isCurrentStageBazaar)
+                if (isCurrentStageBazaar())
                 {
                     if (!bazaar.IsDisplayItem(self.gameObject))
                     {
@@ -415,7 +427,7 @@ namespace BiggerBazaar
         {
             if (NetworkServer.active)
             {
-                if (isCurrentStageBazaar)
+                if (isCurrentStageBazaar())
                 {
                     if (bazaar.IsMoneyLunarPod(self.gameObject.transform.position))
                     {
@@ -428,11 +440,18 @@ namespace BiggerBazaar
             }
         }
 
+        bool isCurrentStageBazaar()
+        {
+            if(SceneCatalog.mostRecentSceneDef == SceneCatalog.GetSceneDefFromSceneName("bazaar"))
+                return true;
+            return false;
+        }
+
         private bool GenericPickupController_OnSerialize(On.RoR2.GenericPickupController.orig_OnSerialize orig, GenericPickupController self, NetworkWriter writer, bool forceAll)
         {
             if (NetworkServer.active)
             {
-                if (isCurrentStageBazaar)
+                if (isCurrentStageBazaar())
                 {
                     List<BazaarItem> bazaarItems = bazaar.GetBazaarItems();
                     for (int i = 0; i < bazaarItems.Count; i++)

@@ -369,7 +369,7 @@ namespace BiggerBazaar
 
         public bool IsMoneyLunarPod(GameObject gameObject)
         {
-            if(gameObject == moneyLunarPod.GetComponent<PurchaseInteraction>().gameObject)
+            if(moneyLunarPod != null && gameObject == moneyLunarPod.GetComponent<PurchaseInteraction>().gameObject)
             {
                 return true;
             }
