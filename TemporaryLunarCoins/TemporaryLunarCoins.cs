@@ -17,7 +17,7 @@ namespace TemporaryLunarCoins
 {
     [BepInDependency("com.bepis.r2api")]
     [NetworkCompatibility(CompatibilityLevel.NoNeedForSync, VersionStrictness.DifferentModVersionsAreOk)]
-    [BepInPlugin("com.MagnusMagnuson.TemporaryLunarCoins", "TemporaryLunarCoins", "0.2.2")]
+    [BepInPlugin("com.MagnusMagnuson.TemporaryLunarCoins", "TemporaryLunarCoins", "0.3.1")]
     public class TemporaryLunarCoins : BaseUnityPlugin
     {
         bool AllAgree = false;
@@ -27,11 +27,12 @@ namespace TemporaryLunarCoins
         private static ConfigEntry<float> DropChance;
         private static ConfigEntry<float> DropMulti;
         private static ConfigEntry<bool> SkipOnSinglePlayer;
+        private static ConfigEntry<bool> AlwaysRemoveCoinsInMultiplayer;
 
 
         //public void Update()
         //{
-        //    if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.C))
+        //    if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.C)) 
         //    {
         //        PlayerCharacterMasterController.instances[0].networkUser.AwardLunarCoins(10);
         //    }
@@ -44,7 +45,8 @@ namespace TemporaryLunarCoins
             DropChance = Config.Bind("", "DropChance", 1.5f, new ConfigDescription("The initial chance to drop coins. Vanilla is 1 (percent)"));
             DropMulti = Config.Bind("", "DropMulti", 0.5f, new ConfigDescription("The multiplier applied to the drop chance after a lunar coins has dropped. Results in diminishing returns if smaller than 1. Vanilla is 0.5 (halving chance every drop). Set to 1 if you want a consistent drop rate."));
             SkipOnSinglePlayer = Config.Bind("", "SkipOnSinglePlayer", false, new ConfigDescription("If this is set to true, Lunar Coins are automatically removed in single player."));
-            
+            AlwaysRemoveCoinsInMultiplayer = Config.Bind("", "AlwaysRemoveCoinsInMultiplayer", true, new ConfigDescription("If this is set to true, Lunar Coins are always automatically removed for you."));
+
             //RoR2.Run.onRunStartGlobal += Run_Start; //Apparently the proper way to do it, since the game natively has an event for it. But ProperSave is now il hooking TLC to deal with compatibility issues I believe, so just leaving as is, as ProperSave breaks otherwise.
             On.RoR2.Run.Start += Run_Start;
 
@@ -52,7 +54,7 @@ namespace TemporaryLunarCoins
 
             //Taken from LoonerCoins
             BindingFlags allFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly;
-            var initDelegate = typeof(PlayerCharacterMasterController).GetNestedTypes(allFlags)[0].GetMethodCached(name: "<Init>b__61_0");
+            var initDelegate = typeof(PlayerCharacterMasterController).GetNestedTypes(allFlags)[0].GetMethodCached(name: "<Init>b__62_0");
 
             if (ChangeDroprate.Value)
             {
@@ -72,18 +74,25 @@ namespace TemporaryLunarCoins
         private void Run_Start(On.RoR2.Run.orig_Start orig, Run self)
         {
             orig(self);
-            if (Run.instance.stageClearCount == 0) // ProperSave already added a fix for this.
+            if(AlwaysRemoveCoinsInMultiplayer.Value && !RoR2Application.isInSinglePlayer)
             {
-                if (RoR2Application.isInSinglePlayer && SkipOnSinglePlayer.Value)
+                StartCoroutine(DelayedAutomaticCoinRemovalLocal());
+            }
+            if (NetworkServer.active)
+            { 
+                if (Run.instance.stageClearCount == 0) // ProperSave already added a fix for this.
                 {
-                    StartCoroutine(DelayedAutomaticCoinRemoval());
-                } else
-                {
-                    AllAgree = false;
-                    SteamPlayers = PopulateSteamPlayersList();
-                    StartCoroutine(StartCoinRemovalAgreement());
-                }
+                    if (RoR2Application.isInSinglePlayer && SkipOnSinglePlayer.Value)
+                    {
+                        StartCoroutine(DelayedAutomaticCoinRemoval());
+                    }
+                    else
+                    {
+                        AllAgree = false;
+                        StartCoroutine(StartCoinRemovalAgreement());
+                    }
 
+                }
             }
         }
 
@@ -92,7 +101,11 @@ namespace TemporaryLunarCoins
             List<SteamPlayer> steamPlayers = new List<SteamPlayer>();
             for (int i = 0; i < PlayerCharacterMasterController.instances.Count; i++)
             {
-                steamPlayers.Add(new SteamPlayer(PlayerCharacterMasterController.instances[i]));
+                if(PlayerCharacterMasterController.instances[i].networkUser.lunarCoins != 0)
+                {
+                    steamPlayers.Add(new SteamPlayer(PlayerCharacterMasterController.instances[i]));
+                }
+                    
             }
 
             return steamPlayers;
@@ -167,11 +180,11 @@ namespace TemporaryLunarCoins
 
         private void UnfreezePlayers()
         {
-            foreach (var p in PlayerCharacterMasterController.instances)
+            foreach (var p in SteamPlayers)
             {
-                p.master.GetBody().gameObject.GetComponent<SetStateOnHurt>().SetFrozen(0.1f);
-                p.master.GetBody().RemoveBuff(BuffIndex.HiddenInvincibility);
-                p.master.GetBody().AddTimedBuff(BuffIndex.HiddenInvincibility, 3f);
+                p.pcmc.master.GetBody().gameObject.GetComponent<SetStateOnHurt>().SetFrozen(0.1f);
+                p.pcmc.master.GetBody().RemoveBuff(RoR2Content.Buffs.HiddenInvincibility);
+                p.pcmc.master.GetBody().AddTimedBuff(RoR2Content.Buffs.HiddenInvincibility, 3f);
             }
         }
 
@@ -185,25 +198,36 @@ namespace TemporaryLunarCoins
 
         public IEnumerator StartCoinRemovalAgreement()
         {
+
             yield return new WaitForSeconds(7f);
             //Time.timeScale = 0f;
+            SteamPlayers = PopulateSteamPlayersList();
+            if (SteamPlayers.Count == 0)
+            {
+                Chat.SendBroadcastChat(new Chat.SimpleChatMessage
+                {
+                    baseToken = " -- Temporary Lunar Coins --" +
+                    "\n<size=15px>Automatically removed lunar coins.</size>"
+                });
+                yield break;
+            }
             Chat.SendBroadcastChat(new Chat.SimpleChatMessage
             {
                 baseToken = " -- Temporary Lunar Coins --" +
                 "\n<size=15px>If you wish to participate in this run, you need to agree to have your lunar coins reset. Type <color=#00cc00>\"tlc_aye\"</color> in the chat if you agree. Otherwise leave the game and keep your coins. The game will resume once everyone present agreed.</size>"
             });
-            foreach (var p in PlayerCharacterMasterController.instances)
+            foreach (var p in SteamPlayers)
             {
-                var state = p.master.GetBody().gameObject.GetComponent<SetStateOnHurt>();
-                p.master.GetBody().AddBuff(BuffIndex.HiddenInvincibility);
+                var state = p.pcmc.master.GetBody().gameObject.GetComponent<SetStateOnHurt>();
+                p.pcmc.master.GetBody().AddBuff(RoR2Content.Buffs.HiddenInvincibility);
             }
             
 
             while (!AllAgree && Run.instance)
             { 
-                foreach (var p in PlayerCharacterMasterController.instances)
+                foreach (var p in SteamPlayers)
                 {
-                    var state = p.master.GetBody().gameObject.GetComponent<SetStateOnHurt>();
+                    var state = p.pcmc.master.GetBody().gameObject.GetComponent<SetStateOnHurt>();
                     if (state.targetStateMachine.state.GetType().Equals(typeof(EntityStates.GenericCharacterMain))) {
                         state.SetFrozen(10000f);
                     }
@@ -212,6 +236,16 @@ namespace TemporaryLunarCoins
             }
 
 
+        }
+
+        public IEnumerator DelayedAutomaticCoinRemovalLocal()
+        {
+            yield return new WaitForSeconds(4f);
+            foreach (var n in NetworkUser.readOnlyLocalPlayersList)
+            {
+                n.localUser.userProfile.coins = 0;
+                n.CallCmdSetNetLunarCoins(n.localUser.userProfile.coins);
+            }
         }
 
         public IEnumerator DelayedAutomaticCoinRemoval()
@@ -229,6 +263,7 @@ namespace TemporaryLunarCoins
 
     internal class SteamPlayer
     {
+        public PlayerCharacterMasterController pcmc;
         public CSteamID steamID;
         public bool isReady;
         public NetworkConnection networkConnection;
@@ -236,6 +271,7 @@ namespace TemporaryLunarCoins
 
         public SteamPlayer(PlayerCharacterMasterController player)
         {
+            pcmc = player;
             steamID = player.networkUser.id.steamId;
             isReady = false;
             networkConnection = player.master.GetComponent<NetworkIdentity>().clientAuthorityOwner;
